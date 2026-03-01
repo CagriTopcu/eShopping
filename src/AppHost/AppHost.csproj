@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Keycloak" Version="13.1.2-preview.1.26125.13" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Services\Catalog\Catalog.API\Catalog.API.csproj" />
     <ProjectReference Include="..\Services\Basket\Basket.API\Basket.API.csproj" />
     <ProjectReference Include="..\Services\Order\Order.API\Order.API.csproj" />

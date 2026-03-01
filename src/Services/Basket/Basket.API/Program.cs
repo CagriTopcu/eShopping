@@ -5,15 +5,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.Services.AddOpenApi();
+builder.Services.AddServiceAuthentication();
+builder.Services.AddAuthorizationPolicies();
+builder.Services.AddCurrentUser();
 
 var app = builder.Build();
 
 app.MapOpenApi();
-app.MapScalarApiReference(options =>
-{
-    options.Title = "Basket API";
-});
+app.MapScalarApiReference(options => { options.Title = "Basket API"; });
 app.MapDefaultEndpoints();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 var group = app.MapGroup("/api/v1/basket").WithTags("Basket");
 
@@ -26,18 +29,21 @@ group.MapGet("/{username}", (string username) =>
             new BasketItem("prod-2", "Wireless Mouse", 2, 29.99m)
         },
         1359.97m)))
-    .WithName("GetBasket");
+    .WithName("GetBasket")
+    .RequireAuthorization("RequireCustomer");
 
 group.MapPost("/", (UpdateBasketRequest request) =>
     TypedResults.Ok(new BasketResponse(
         request.Username,
         request.Items,
         request.Items.Sum(i => i.Price * i.Quantity))))
-    .WithName("UpdateBasket");
+    .WithName("UpdateBasket")
+    .RequireAuthorization("RequireCustomer");
 
 group.MapDelete("/{username}", (string username) =>
     TypedResults.NoContent())
-    .WithName("DeleteBasket");
+    .WithName("DeleteBasket")
+    .RequireAuthorization("RequireCustomer");
 
 app.Run();
 

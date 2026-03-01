@@ -1,0 +1,72 @@
+{
+  "realm": "eshopping",
+  "enabled": true,
+  "displayName": "eShopping Platform",
+  "accessTokenLifespan": 900,
+  "ssoSessionMaxLifespan": 36000,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "Admin",
+        "description": "Administrator — full platform access",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "eshopping"
+      },
+      {
+        "name": "Customer",
+        "description": "Standard customer",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "eshopping"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "eshopping-client",
+      "name": "eShopping Client",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:*/*", "https://localhost:*/*"],
+      "webOrigins": ["http://localhost:*", "https://localhost:*"],
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@eshopping.local",
+      "firstName": "Admin",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "Admin1234!", "temporary": false }
+      ],
+      "realmRoles": ["Admin", "Customer"]
+    },
+    {
+      "username": "customer",
+      "email": "customer@eshopping.local",
+      "firstName": "Customer",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "Customer1234!", "temporary": false }
+      ],
+      "realmRoles": ["Customer"]
+    }
+  ]
+}

@@ -5,15 +5,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.Services.AddOpenApi();
+builder.Services.AddServiceAuthentication();
+builder.Services.AddAuthorizationPolicies();
+builder.Services.AddCurrentUser();
 
 var app = builder.Build();
 
 app.MapOpenApi();
-app.MapScalarApiReference(options =>
-{
-    options.Title = "Order API";
-});
+app.MapScalarApiReference(options => { options.Title = "Order API"; });
 app.MapDefaultEndpoints();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 var group = app.MapGroup("/api/v1/order").WithTags("Order");
 
@@ -22,7 +25,8 @@ group.MapGet("/{username}", (string username) =>
     {
         new OrderResponse(Guid.NewGuid(), username, "Pending", 1359.97m, DateTime.UtcNow)
     }))
-    .WithName("GetOrdersByUsername");
+    .WithName("GetOrdersByUsername")
+    .RequireAuthorization("RequireCustomer");
 
 group.MapPost("/", (CreateOrderRequest request) =>
 {
@@ -30,7 +34,8 @@ group.MapPost("/", (CreateOrderRequest request) =>
     return TypedResults.Created($"/api/v1/order/{id}",
         new OrderResponse(id, request.Username, "Pending", request.TotalAmount, DateTime.UtcNow));
 })
-    .WithName("CreateOrder");
+    .WithName("CreateOrder")
+    .RequireAuthorization("RequireCustomer");
 
 app.Run();
 

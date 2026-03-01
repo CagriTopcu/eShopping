@@ -36,8 +36,8 @@
     <Project Path="src/Services/Notification/Notification.Worker/Notification.Worker.csproj" />
     <Project Path="src/Services/Notification/Notification.Grpc/Notification.Grpc.csproj" />
   </Folder>
-  <Folder Name="/src/Services/Gateway/">
-    <Project Path="src/Services/Gateway/Gateway.API/Gateway.API.csproj" />
+  <Folder Name="/src/Gateways/">
+    <Project Path="src/Gateways/Gateway.API/Gateway.API.csproj" />
   </Folder>
   <Folder Name="/tests/Unit/">
     <Project Path="tests/Unit/Catalog.Domain.Tests/Catalog.Domain.Tests.csproj" />

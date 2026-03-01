@@ -1,0 +1,55 @@
+<Solution>
+  <Folder Name="/src/AppHost/">
+    <Project Path="src/AppHost/AppHost.csproj" />
+  </Folder>
+  <Folder Name="/src/ServiceDefaults/">
+    <Project Path="src/ServiceDefaults/ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Shared.Contracts/Shared.Contracts.csproj" />
+    <Project Path="src/Shared/Shared.BuildingBlocks/Shared.BuildingBlocks.csproj" />
+    <Project Path="src/Shared/Shared.Grpc/Shared.Grpc.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Catalog/">
+    <Project Path="src/Services/Catalog/Catalog.Domain/Catalog.Domain.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.Application/Catalog.Application.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.API/Catalog.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Basket/">
+    <Project Path="src/Services/Basket/Basket.Domain/Basket.Domain.csproj" />
+    <Project Path="src/Services/Basket/Basket.Application/Basket.Application.csproj" />
+    <Project Path="src/Services/Basket/Basket.Infrastructure/Basket.Infrastructure.csproj" />
+    <Project Path="src/Services/Basket/Basket.API/Basket.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Order/">
+    <Project Path="src/Services/Order/Order.Domain/Order.Domain.csproj" />
+    <Project Path="src/Services/Order/Order.Application/Order.Application.csproj" />
+    <Project Path="src/Services/Order/Order.Infrastructure/Order.Infrastructure.csproj" />
+    <Project Path="src/Services/Order/Order.API/Order.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Payment/">
+    <Project Path="src/Services/Payment/Payment.API/Payment.API.csproj" />
+    <Project Path="src/Services/Payment/Payment.Grpc/Payment.Grpc.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Notification/">
+    <Project Path="src/Services/Notification/Notification.Worker/Notification.Worker.csproj" />
+    <Project Path="src/Services/Notification/Notification.Grpc/Notification.Grpc.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Gateway/">
+    <Project Path="src/Services/Gateway/Gateway.API/Gateway.API.csproj" />
+  </Folder>
+  <Folder Name="/tests/Unit/">
+    <Project Path="tests/Unit/Catalog.Domain.Tests/Catalog.Domain.Tests.csproj" />
+    <Project Path="tests/Unit/Basket.Domain.Tests/Basket.Domain.Tests.csproj" />
+    <Project Path="tests/Unit/Order.Domain.Tests/Order.Domain.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Integration/">
+    <Project Path="tests/Integration/Catalog.Integration.Tests/Catalog.Integration.Tests.csproj" />
+    <Project Path="tests/Integration/Basket.Integration.Tests/Basket.Integration.Tests.csproj" />
+    <Project Path="tests/Integration/Order.Integration.Tests/Order.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Contract/">
+    <Project Path="tests/Contract/Pact.Tests/Pact.Tests.csproj" />
+  </Folder>
+</Solution>

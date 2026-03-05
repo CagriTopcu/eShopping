@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Gateway.API.Auth;
+using Gateway.API.OpenApi;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +11,7 @@ using Yarp.ReverseProxy.Transforms;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.Services.AddOpenApi();
+builder.Services.AddSingleton<OpenApiAggregator>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -77,8 +78,21 @@ builder.Services.AddReverseProxy()
 
 var app = builder.Build();
 
-app.MapOpenApi();
-app.MapScalarApiReference(options => { options.Title = "Gateway API"; });
+app.MapGet("/openapi/v1.json", async (
+    OpenApiAggregator aggregator,
+    bool refresh = false,
+    CancellationToken ct = default) =>
+{
+    var spec = await aggregator.GetAggregatedSpecAsync(refresh, ct);
+    return Results.Content(spec, "application/json");
+})
+.ExcludeFromDescription();
+
+app.MapScalarApiReference(options =>
+{
+    options.Title = "eShopping API";
+    options.OpenApiRoutePattern = "/openapi/v1.json";
+});
 app.MapDefaultEndpoints();
 
 app.UseAuthentication();

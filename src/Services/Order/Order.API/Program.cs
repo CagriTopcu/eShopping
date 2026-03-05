@@ -18,7 +18,7 @@ app.MapDefaultEndpoints();
 app.UseAuthentication();
 app.UseAuthorization();
 
-var group = app.MapGroup("/api/v1/order").WithTags("Order");
+var group = app.MapGroup("/api/v1/orders").WithTags("Order");
 
 group.MapGet("/{username}", (string username) =>
     TypedResults.Ok(new[]
@@ -31,7 +31,7 @@ group.MapGet("/{username}", (string username) =>
 group.MapPost("/", (CreateOrderRequest request) =>
 {
     var id = Guid.NewGuid();
-    return TypedResults.Created($"/api/v1/order/{id}",
+    return TypedResults.Created($"/api/v1/orders/{id}",
         new OrderResponse(id, request.Username, "Pending", request.TotalAmount, DateTime.UtcNow));
 })
     .WithName("CreateOrder")

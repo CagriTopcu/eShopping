@@ -25,8 +25,6 @@ public static class MappingConfig
             .Map(dest => dest.Currency, src => src.Price.Currency)
             .Map(dest => dest.Stock, src => src.Stock.Value);
 
-        TypeAdapterConfig<ProductReadModel, ProductResponse>.NewConfig()
-            .Ignore(dest => dest.UpdatedAt!)
-            .Map(dest => dest.UpdatedAt, src => src.UpdatedAt);
+        TypeAdapterConfig<ProductReadModel, ProductResponse>.NewConfig();
     }
 }

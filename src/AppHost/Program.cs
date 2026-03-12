@@ -21,7 +21,14 @@ var catalogApi = builder.AddProject<Projects.Catalog_API>("catalog-api")
     .WithReference(elasticsearch)
     .WaitFor(catalogDb)
     .WaitFor(elasticsearch);
-var basketApi = builder.AddProject<Projects.Basket_API>("basket-api");
+
+var redis = builder.AddRedis("redis");
+
+var basketApi = builder.AddProject<Projects.Basket_API>("basket-api")
+    .WithReference(redis)
+    .WithReference(catalogApi)
+    .WaitFor(redis)
+    .WaitFor(catalogApi);
 var paymentApi = builder.AddProject<Projects.Payment_API>("payment-api");
 var notificationWorker = builder.AddProject<Projects.Notification_Worker>("notification-worker");
 

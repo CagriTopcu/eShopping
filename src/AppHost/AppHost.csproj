@@ -9,11 +9,13 @@
     <PackageReference Include="Aspire.Hosting.Elasticsearch" Version="9.4.1" />
     <PackageReference Include="Aspire.Hosting.Keycloak" Version="13.1.2-preview.1.26125.13" />
     <PackageReference Include="Aspire.Hosting.MongoDB" Version="9.2.0" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.2.0" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="9.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Services\Catalog\Catalog.API\Catalog.API.csproj" />
     <ProjectReference Include="..\Services\Basket\Basket.API\Basket.API.csproj" />
+    <ProjectReference Include="..\Services\Stock\Stock.API\Stock.API.csproj" />
     <ProjectReference Include="..\Services\Order\Order.API\Order.API.csproj" />
     <ProjectReference Include="..\Services\Payment\Payment.API\Payment.API.csproj" />
     <ProjectReference Include="..\Services\Notification\Notification.Worker\Notification.Worker.csproj" />

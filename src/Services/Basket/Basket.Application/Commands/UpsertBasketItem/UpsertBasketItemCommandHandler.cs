@@ -9,15 +9,16 @@ namespace Basket.Application.Commands.UpsertBasketItem;
 
 internal sealed class UpsertBasketItemCommandHandler(
     IBasketRepository basketRepository,
-    ICatalogClient catalogClient)
+    ICatalogClient catalogClient,
+    IStockClient stockClient)
     : ICommandHandler<UpsertBasketItemCommand, BasketResponse>
 {
     public async Task<Result<BasketResponse>> Handle(
         UpsertBasketItemCommand request,
         CancellationToken cancellationToken)
     {
+        // 1. Resolve product metadata from Catalog (name, price, currency).
         ProductSnapshot? snapshot;
-
         try
         {
             snapshot = await catalogClient.GetProductSnapshotAsync(request.ProductId, cancellationToken);
@@ -30,6 +31,19 @@ internal sealed class UpsertBasketItemCommandHandler(
         if (snapshot is null)
             return BasketErrors.ProductNotFound;
 
+        // 2. Query stock availability from StockService (soft check).
+        //    null means no stock record exists → treated as unconstrained (permissive).
+        //    Hard reservation happens in the Order saga at checkout.
+        StockInfo? stockInfo;
+        try
+        {
+            stockInfo = await stockClient.GetStockAsync(request.ProductId, cancellationToken);
+        }
+        catch (StockServiceUnavailableException)
+        {
+            return BasketErrors.StockUnavailable;
+        }
+
         var basket = await basketRepository.GetAsync(request.Username, cancellationToken)
             ?? Basket.Domain.Entities.Basket.Create(request.Username);
 
@@ -39,7 +53,7 @@ internal sealed class UpsertBasketItemCommandHandler(
             snapshot.Price,
             snapshot.Currency,
             request.Quantity,
-            snapshot.Stock);
+            stockInfo?.AvailableQuantity);
 
         if (result.IsFailure)
             return result.Error;

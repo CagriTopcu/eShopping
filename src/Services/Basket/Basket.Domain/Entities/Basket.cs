@@ -29,13 +29,18 @@ public sealed class Basket : AggregateRoot<BasketId>
         return basket;
     }
 
+    /// <param name="availableStock">
+    /// Live stock from StockService. Pass <c>null</c> when no stock record exists —
+    /// Basket treats missing stock data as unconstrained (permissive soft-check).
+    /// The Order saga performs the hard atomic reservation at checkout.
+    /// </param>
     public Result AddOrUpdateItem(
         Guid productId,
         string productName,
         decimal unitPrice,
         string currency,
         int quantity,
-        int availableStock)
+        int? availableStock)
     {
         if (quantity <= 0)
             return BasketErrors.InvalidQuantity;
@@ -43,11 +48,14 @@ public sealed class Basket : AggregateRoot<BasketId>
         if (quantity > MaxQuantityPerItem)
             return BasketErrors.InsufficientStock(MaxQuantityPerItem);
 
-        if (availableStock == 0)
-            return BasketErrors.OutOfStock;
+        if (availableStock.HasValue)
+        {
+            if (availableStock.Value == 0)
+                return BasketErrors.OutOfStock;
 
-        if (quantity > availableStock)
-            return BasketErrors.InsufficientStock(availableStock);
+            if (quantity > availableStock.Value)
+                return BasketErrors.InsufficientStock(availableStock.Value);
+        }
 
         var existing = _items.FirstOrDefault(i => i.ProductId == productId);
 

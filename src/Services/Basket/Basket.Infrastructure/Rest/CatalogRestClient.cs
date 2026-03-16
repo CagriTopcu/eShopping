@@ -33,8 +33,7 @@ internal sealed class CatalogRestClient(HttpClient httpClient) : ICatalogClient
             product.Id,
             product.Name,
             product.Price,
-            product.Currency,
-            product.Stock);
+            product.Currency);
     }
 }
 

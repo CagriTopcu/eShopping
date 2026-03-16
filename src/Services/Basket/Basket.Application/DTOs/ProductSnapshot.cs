@@ -4,5 +4,4 @@ public sealed record ProductSnapshot(
     Guid ProductId,
     string Name,
     decimal Price,
-    string Currency,
-    int Stock);
+    string Currency);

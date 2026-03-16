@@ -20,6 +20,10 @@ public static class BasketErrors
         Error.Failure("Basket.CatalogUnavailable",
             "Unable to validate product — catalog service is unreachable.");
 
+    public static readonly Error StockUnavailable =
+        Error.Failure("Basket.StockUnavailable",
+            "Unable to validate stock — stock service is unreachable.");
+
     public static readonly Error OutOfStock =
         Error.Validation("Basket.OutOfStock", "This product is currently out of stock.");
 

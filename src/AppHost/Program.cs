@@ -24,11 +24,20 @@ var catalogApi = builder.AddProject<Projects.Catalog_API>("catalog-api")
 
 var redis = builder.AddRedis("redis");
 
+var postgres = builder.AddPostgres("postgres");
+var stockDb = postgres.AddDatabase("stock-db");
+
+var stockApi = builder.AddProject<Projects.Stock_API>("stock-api")
+    .WithReference(stockDb)
+    .WaitFor(stockDb);
+
 var basketApi = builder.AddProject<Projects.Basket_API>("basket-api")
     .WithReference(redis)
     .WithReference(catalogApi)
+    .WithReference(stockApi)
     .WaitFor(redis)
-    .WaitFor(catalogApi);
+    .WaitFor(catalogApi)
+    .WaitFor(stockApi);
 var paymentApi = builder.AddProject<Projects.Payment_API>("payment-api");
 var notificationWorker = builder.AddProject<Projects.Notification_Worker>("notification-worker");
 

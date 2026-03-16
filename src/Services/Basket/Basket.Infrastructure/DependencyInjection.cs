@@ -19,9 +19,10 @@ public static class DependencyInjection
             configuration.GetSection(BasketOptions.SectionName));
 
         builder.Services.AddHttpClient<ICatalogClient, CatalogRestClient>(client =>
-            client.BaseAddress = new Uri("http://catalog-api"))
-            .AddServiceDiscovery()
-            .AddStandardResilienceHandler();
+            client.BaseAddress = new Uri("http://catalog-api"));
+
+        builder.Services.AddHttpClient<IStockClient, StockRestClient>(client =>
+            client.BaseAddress = new Uri("http://stock-api"));
 
         builder.Services.AddScoped<IBasketRepository, BasketRedisRepository>();
 

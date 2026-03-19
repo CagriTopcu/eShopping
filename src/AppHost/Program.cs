@@ -26,6 +26,7 @@ var redis = builder.AddRedis("redis");
 
 var postgres = builder.AddPostgres("postgres");
 var stockDb = postgres.AddDatabase("stock-db");
+var orderDb = postgres.AddDatabase("order-db");
 
 var stockApi = builder.AddProject<Projects.Stock_API>("stock-api")
     .WithReference(stockDb)
@@ -42,8 +43,10 @@ var paymentApi = builder.AddProject<Projects.Payment_API>("payment-api");
 var notificationWorker = builder.AddProject<Projects.Notification_Worker>("notification-worker");
 
 var orderApi = builder.AddProject<Projects.Order_API>("order-api")
+    .WithReference(orderDb)
     .WithReference(paymentApi)
-    .WithReference(notificationWorker);
+    .WithReference(notificationWorker)
+    .WaitFor(orderDb);
 
 builder.AddProject<Projects.Gateway_API>("gateway-api")
     .WithReference(catalogApi)

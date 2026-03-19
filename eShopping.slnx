@@ -38,7 +38,6 @@
   </Folder>
   <Folder Name="/src/Services/Payment/">
     <Project Path="src/Services/Payment/Payment.API/Payment.API.csproj" />
-    <Project Path="src/Services/Payment/Payment.Grpc/Payment.Grpc.csproj" />
   </Folder>
   <Folder Name="/src/Services/Notification/">
     <Project Path="src/Services/Notification/Notification.Grpc/Notification.Grpc.csproj" />

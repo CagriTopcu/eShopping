@@ -1,0 +1,358 @@
+{
+  "info": {
+    "name": "eShopping Platform",
+    "_postman_id": "eshopping-platform-collection",
+    "description": "All services. Set base URL variables from the Aspire dashboard (http://localhost:18888) before running.\n\nAuth: Services accept X-User-Id and X-User-Roles headers directly (simulating what the Gateway injects after JWT validation). No Keycloak token needed for direct service calls.\n\nRecommended test flow:\n1. Create a product (Catalog)\n2. Set stock for it (Stock)\n3. Add it to basket (Basket)\n4. Place an order (Order)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "catalog_url", "value": "http://localhost:5273", "description": "Update from Aspire dashboard" },
+    { "key": "basket_url",  "value": "http://localhost:5136", "description": "Update from Aspire dashboard" },
+    { "key": "order_url",   "value": "http://localhost:5074", "description": "Update from Aspire dashboard" },
+    { "key": "stock_url",   "value": "http://localhost:5165", "description": "Update from Aspire dashboard" },
+    { "key": "user_id",     "value": "00000000-0000-0000-0000-000000000001", "description": "Test customer user ID" },
+    { "key": "username",    "value": "testuser", "description": "Test username for basket" },
+    { "key": "product_id",  "value": "", "description": "Filled after Create Product" },
+    { "key": "order_id",    "value": "", "description": "Filled after Place Order" },
+    { "key": "payment_url", "value": "http://localhost:5100", "description": "Update from Aspire dashboard" }
+  ],
+  "item": [
+    {
+      "name": "Catalog",
+      "item": [
+        {
+          "name": "Get Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalog_url}}/api/v1/catalog/products",
+              "host": ["{{catalog_url}}"],
+              "path": ["api", "v1", "catalog", "products"],
+              "query": [
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true },
+                { "key": "pageSize", "value": "10", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{catalog_url}}/api/v1/catalog/products/{{product_id}}",
+              "host": ["{{catalog_url}}"],
+              "path": ["api", "v1", "catalog", "products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Product [Admin]",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const id = pm.response.json();",
+                  "    pm.collectionVariables.set('product_id', id);",
+                  "    console.log('product_id set to: ' + id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Admin" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Headphones Pro\",\n  \"category\": \"Electronics\",\n  \"price\": 149.99,\n  \"currency\": \"USD\",\n  \"stock\": 100,\n  \"description\": \"Premium noise-cancelling wireless headphones\",\n  \"imageUrl\": \"https://example.com/headphones.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{catalog_url}}/api/v1/catalog/products",
+              "host": ["{{catalog_url}}"],
+              "path": ["api", "v1", "catalog", "products"]
+            }
+          }
+        },
+        {
+          "name": "Update Product [Admin]",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Admin" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Headphones Pro v2\",\n  \"category\": \"Electronics\",\n  \"price\": 159.99,\n  \"currency\": \"USD\",\n  \"description\": \"Updated premium noise-cancelling wireless headphones\",\n  \"imageUrl\": \"https://example.com/headphones-v2.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{catalog_url}}/api/v1/catalog/products/{{product_id}}",
+              "host": ["{{catalog_url}}"],
+              "path": ["api", "v1", "catalog", "products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Adjust Stock [Admin]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Admin" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": 50\n}"
+            },
+            "url": {
+              "raw": "{{catalog_url}}/api/v1/catalog/products/{{product_id}}/stock",
+              "host": ["{{catalog_url}}"],
+              "path": ["api", "v1", "catalog", "products", "{{product_id}}", "stock"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product [Admin]",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Admin" }
+            ],
+            "url": {
+              "raw": "{{catalog_url}}/api/v1/catalog/products/{{product_id}}",
+              "host": ["{{catalog_url}}"],
+              "path": ["api", "v1", "catalog", "products", "{{product_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock",
+      "item": [
+        {
+          "name": "Get Stock by Product ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{stock_url}}/api/v1/stock/{{product_id}}",
+              "host": ["{{stock_url}}"],
+              "path": ["api", "v1", "stock", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Set Stock",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availableQuantity\": 200\n}"
+            },
+            "url": {
+              "raw": "{{stock_url}}/api/v1/stock/{{product_id}}",
+              "host": ["{{stock_url}}"],
+              "path": ["api", "v1", "stock", "{{product_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Basket",
+      "item": [
+        {
+          "name": "Get Basket",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Customer" }
+            ],
+            "url": {
+              "raw": "{{basket_url}}/api/v1/basket/{{username}}",
+              "host": ["{{basket_url}}"],
+              "path": ["api", "v1", "basket", "{{username}}"]
+            }
+          }
+        },
+        {
+          "name": "Upsert Basket Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Customer" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{basket_url}}/api/v1/basket/{{username}}/items",
+              "host": ["{{basket_url}}"],
+              "path": ["api", "v1", "basket", "{{username}}", "items"]
+            }
+          }
+        },
+        {
+          "name": "Remove Basket Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Customer" }
+            ],
+            "url": {
+              "raw": "{{basket_url}}/api/v1/basket/{{username}}/items/{{product_id}}",
+              "host": ["{{basket_url}}"],
+              "path": ["api", "v1", "basket", "{{username}}", "items", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Basket",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Customer" }
+            ],
+            "url": {
+              "raw": "{{basket_url}}/api/v1/basket/{{username}}",
+              "host": ["{{basket_url}}"],
+              "path": ["api", "v1", "basket", "{{username}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Reserve Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"customerId\": \"{{user_id}}\",\n  \"amount\": 299.98,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{payment_url}}/api/v1/payments/reserve",
+              "host": ["{{payment_url}}"],
+              "path": ["api", "v1", "payments", "reserve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order",
+      "item": [
+        {
+          "name": "Place Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('order_id', body.id);",
+                  "    console.log('order_id set to: ' + body.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Customer" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"street\": \"123 Main Street\",\n  \"city\": \"Istanbul\",\n  \"state\": \"Istanbul\",\n  \"country\": \"Turkey\",\n  \"zipCode\": \"34000\",\n  \"items\": [\n    {\n      \"productId\": \"{{product_id}}\",\n      \"productName\": \"Wireless Headphones Pro\",\n      \"unitPrice\": 149.99,\n      \"quantity\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{order_url}}/api/v1/orders",
+              "host": ["{{order_url}}"],
+              "path": ["api", "v1", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Customer" }
+            ],
+            "url": {
+              "raw": "{{order_url}}/api/v1/orders",
+              "host": ["{{order_url}}"],
+              "path": ["api", "v1", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Customer" }
+            ],
+            "url": {
+              "raw": "{{order_url}}/api/v1/orders/{{order_id}}",
+              "host": ["{{order_url}}"],
+              "path": ["api", "v1", "orders", "{{order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "X-User-Id", "value": "{{user_id}}" },
+              { "key": "X-User-Roles", "value": "Customer" }
+            ],
+            "url": {
+              "raw": "{{order_url}}/api/v1/orders/{{order_id}}",
+              "host": ["{{order_url}}"],
+              "path": ["api", "v1", "orders", "{{order_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

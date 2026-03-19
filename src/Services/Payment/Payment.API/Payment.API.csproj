@@ -12,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Payment.Grpc\Payment.Grpc.csproj" />
     <ProjectReference Include="..\..\..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 

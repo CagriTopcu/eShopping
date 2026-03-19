@@ -28,9 +28,13 @@ var postgres = builder.AddPostgres("postgres");
 var stockDb = postgres.AddDatabase("stock-db");
 var orderDb = postgres.AddDatabase("order-db");
 
+var rabbit = builder.AddRabbitMQ("rabbitmq");
+
 var stockApi = builder.AddProject<Projects.Stock_API>("stock-api")
     .WithReference(stockDb)
-    .WaitFor(stockDb);
+    .WithReference(rabbit)
+    .WaitFor(stockDb)
+    .WaitFor(rabbit);
 
 var basketApi = builder.AddProject<Projects.Basket_API>("basket-api")
     .WithReference(redis)
@@ -39,14 +43,17 @@ var basketApi = builder.AddProject<Projects.Basket_API>("basket-api")
     .WaitFor(redis)
     .WaitFor(catalogApi)
     .WaitFor(stockApi);
+
 var paymentApi = builder.AddProject<Projects.Payment_API>("payment-api");
 var notificationWorker = builder.AddProject<Projects.Notification_Worker>("notification-worker");
 
 var orderApi = builder.AddProject<Projects.Order_API>("order-api")
     .WithReference(orderDb)
     .WithReference(paymentApi)
+    .WithReference(rabbit)
     .WithReference(notificationWorker)
-    .WaitFor(orderDb);
+    .WaitFor(orderDb)
+    .WaitFor(rabbit);
 
 builder.AddProject<Projects.Gateway_API>("gateway-api")
     .WithReference(catalogApi)

@@ -1,14 +1,17 @@
 using Mapster;
+using MassTransit;
 using Order.Application.Abstractions;
 using Order.Application.DTOs;
-using Order.Domain.Entities;
 using Order.Domain.ValueObjects;
 using Shared.BuildingBlocks.CQRS;
 using Shared.BuildingBlocks.Results;
+using Shared.Contracts.Events.Orders;
 
 namespace Order.Application.Commands.PlaceOrder;
 
-internal sealed class PlaceOrderCommandHandler(IOrderRepository orderRepository)
+internal sealed class PlaceOrderCommandHandler(
+    IOrderRepository orderRepository,
+    IPublishEndpoint publishEndpoint)
     : ICommandHandler<PlaceOrderCommand, OrderResponse>
 {
     public async Task<Result<OrderResponse>> Handle(PlaceOrderCommand request, CancellationToken cancellationToken)
@@ -29,6 +32,18 @@ internal sealed class PlaceOrderCommandHandler(IOrderRepository orderRepository)
             return result.Error;
 
         await orderRepository.AddAsync(result.Value, cancellationToken);
+
+        await publishEndpoint.Publish(
+            new OrderPlacedIntegrationEvent(
+                result.Value.Id.Value,
+                request.CustomerId,
+                request.Items
+                    .Select(i => new OrderItemDto(i.ProductId, i.ProductName, i.UnitPrice, i.Quantity))
+                    .ToList(),
+                result.Value.TotalAmount,
+                DateTimeOffset.UtcNow),
+            cancellationToken);
+
         await orderRepository.SaveChangesAsync(cancellationToken);
 
         return result.Value.Adapt<OrderResponse>();

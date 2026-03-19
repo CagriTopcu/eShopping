@@ -5,16 +5,6 @@ using Stock.Domain.ValueObjects;
 
 namespace Stock.Domain.Entities;
 
-/// <summary>
-/// Represents the inventory record for a single product.
-/// Currently handles availability queries (soft checks for Basket service).
-///
-/// Future extension points (not implemented — add when Order saga needs them):
-///   - ReservedQuantity: tracks quantity held by pending orders
-///   - Reserve(int quantity, Guid reservationId): atomic reservation for checkout
-///   - Release(Guid reservationId): release reservation on order cancellation
-///   - Confirm(Guid reservationId): deduct confirmed quantity on order completion
-/// </summary>
 public sealed class StockItem : AggregateRoot<StockItemId>
 {
     private StockItem(StockItemId id, Guid productId, int availableQuantity) : base(id)
@@ -36,5 +26,23 @@ public sealed class StockItem : AggregateRoot<StockItemId>
 
         AvailableQuantity = quantity;
         return Result.Success();
+    }
+
+    public Result Reserve(int quantity)
+    {
+        if (quantity <= 0)
+            return StockErrors.InvalidQuantity;
+
+        if (AvailableQuantity < quantity)
+            return StockErrors.InsufficientStock(AvailableQuantity);
+
+        AvailableQuantity -= quantity;
+        return Result.Success();
+    }
+
+    public void Release(int quantity)
+    {
+        if (quantity > 0)
+            AvailableQuantity += quantity;
     }
 }

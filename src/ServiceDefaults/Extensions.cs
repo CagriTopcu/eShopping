@@ -1,9 +1,11 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -74,6 +76,63 @@ public static class Extensions
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
         return builder;
+    }
+
+    public static IServiceCollection AddServiceOpenApi(
+        this IServiceCollection services,
+        string title,
+        string description)
+    {
+        services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer((document, context, ct) =>
+            {
+                document.Info = new OpenApiInfo
+                {
+                    Title = title,
+                    Version = "v1",
+                    Description = description,
+                    Contact = new OpenApiContact
+                    {
+                        Name = "eShopping Team",
+                        Email = "api@eshopping.dev"
+                    },
+                    License = new OpenApiLicense { Name = "MIT" }
+                };
+
+                document.Components ??= new OpenApiComponents();
+                document.Components.SecuritySchemes ??=
+                    new Dictionary<string, IOpenApiSecurityScheme>();
+
+                document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Description = "JWT token obtained from Keycloak. Format: Bearer {token}"
+                };
+
+                return Task.CompletedTask;
+            });
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddServiceApiVersioning(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = ApiVersionReader.Combine(
+                new UrlSegmentApiVersionReader(),
+                new HeaderApiVersionReader("api-version")
+            );
+        });
+
+        return services;
     }
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)

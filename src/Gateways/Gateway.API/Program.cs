@@ -78,20 +78,24 @@ builder.Services.AddReverseProxy()
 
 var app = builder.Build();
 
-app.MapGet("/openapi/v1.json", async (
+app.MapGet("/openapi/{version}.json", async (
+    string version,
     OpenApiAggregator aggregator,
     bool refresh = false,
     CancellationToken ct = default) =>
 {
-    var spec = await aggregator.GetAggregatedSpecAsync(refresh, ct);
+    var spec = await aggregator.GetAggregatedSpecAsync(version, refresh, ct);
     return Results.Content(spec, "application/json");
 })
 .ExcludeFromDescription();
 
 app.MapScalarApiReference(options =>
 {
-    options.Title = "eShopping API";
-    options.OpenApiRoutePattern = "/openapi/v1.json";
+    options.Title = "eShopping API Gateway";
+    options.Theme = ScalarTheme.BluePlanet;
+    options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    options.OpenApiRoutePattern = "/openapi/{documentName}.json";
+    options.AddPreferredSecuritySchemes("Bearer");
 });
 app.MapDefaultEndpoints();
 

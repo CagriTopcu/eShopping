@@ -10,6 +10,8 @@ internal static class GetBasketEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapGet("/{username}", Handle)
             .WithName("GetBasket")
+            .WithSummary("Get user basket")
+            .WithDescription("Returns the shopping basket for the specified user including items and total price.")
             .Produces<BasketResponse>()
             .ProducesProblem(404)
             .RequireAuthorization("RequireCustomer");

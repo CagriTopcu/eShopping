@@ -10,6 +10,8 @@ internal static class AdjustStockEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapPatch("/products/{id:guid}/stock", Handle)
             .WithName("AdjustStock")
+            .WithSummary("Adjust product stock")
+            .WithDescription("Increments or decrements stock by a delta value. Use positive values to add stock, negative to remove. Requires Admin role.")
             .Produces(204)
             .ProducesProblem(404)
             .ProducesProblem(409)

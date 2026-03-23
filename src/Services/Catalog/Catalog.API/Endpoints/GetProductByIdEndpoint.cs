@@ -10,6 +10,8 @@ internal static class GetProductByIdEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapGet("/products/{id:guid}", Handle)
             .WithName("GetProductById")
+            .WithSummary("Get product by ID")
+            .WithDescription("Returns a single product by its unique identifier.")
             .Produces<ProductResponse>()
             .ProducesProblem(404)
             .AllowAnonymous();

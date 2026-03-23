@@ -12,6 +12,8 @@ internal static class GetProductsEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapGet("/products", Handle)
             .WithName("GetProducts")
+            .WithSummary("List products")
+            .WithDescription("Returns a paginated list of products. Supports filtering by category, name, and price range.")
             .Produces<PagedList<ProductResponse>>()
             .AllowAnonymous();
 

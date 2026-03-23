@@ -11,6 +11,8 @@ internal static class GetOrderByIdEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapGet("/{id:guid}", Handle)
             .WithName("GetOrderById")
+            .WithSummary("Get order by ID")
+            .WithDescription("Returns detailed order information. Users can only access their own orders (403 if not owner).")
             .Produces<OrderResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status403Forbidden)

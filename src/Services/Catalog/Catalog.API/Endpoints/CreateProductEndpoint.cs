@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Catalog.Application.Commands.CreateProduct;
 using Catalog.Application.DTOs;
 using MediatR;
@@ -10,6 +11,8 @@ internal static class CreateProductEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapPost("/products", Handle)
             .WithName("CreateProduct")
+            .WithSummary("Create a new product")
+            .WithDescription("Creates a new product in the catalog. Requires Admin role.")
             .Produces<Guid>(201)
             .ProducesProblem(400)
             .ProducesProblem(422)
@@ -18,6 +21,7 @@ internal static class CreateProductEndpoint
     private static async Task<IResult> Handle(
         CreateProductRequest request,
         ISender sender,
+        HttpContext context,
         CancellationToken ct)
     {
         var command = new CreateProductCommand(
@@ -34,6 +38,7 @@ internal static class CreateProductEndpoint
         if (result.IsFailure)
             return result.ToHttpResult();
 
-        return Results.Created($"/api/v1/catalog/products/{result.Value}", result.Value);
+        var version = context.GetRequestedApiVersion();
+        return Results.Created($"/api/v{version}/catalog/products/{result.Value}", result.Value);
     }
 }

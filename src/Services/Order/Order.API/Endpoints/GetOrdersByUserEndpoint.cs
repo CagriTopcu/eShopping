@@ -11,6 +11,8 @@ internal static class GetOrdersByUserEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapGet("/", Handle)
             .WithName("GetOrdersByUser")
+            .WithSummary("List user orders")
+            .WithDescription("Returns all orders for the authenticated user, ordered by most recent.")
             .Produces<IReadOnlyList<OrderResponse>>()
             .RequireAuthorization("RequireCustomer");
 

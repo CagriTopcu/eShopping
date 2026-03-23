@@ -10,6 +10,8 @@ internal static class UpdateProductEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapPut("/products/{id:guid}", Handle)
             .WithName("UpdateProduct")
+            .WithSummary("Update a product")
+            .WithDescription("Updates an existing product's details. Requires Admin role.")
             .Produces(204)
             .ProducesProblem(404)
             .ProducesProblem(422)

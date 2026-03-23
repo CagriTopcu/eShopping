@@ -9,6 +9,8 @@ internal static class DeleteBasketEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapDelete("/{username}", Handle)
             .WithName("DeleteBasket")
+            .WithSummary("Clear basket")
+            .WithDescription("Removes all items from the user's basket.")
             .Produces(StatusCodes.Status204NoContent)
             .RequireAuthorization("RequireCustomer");
 

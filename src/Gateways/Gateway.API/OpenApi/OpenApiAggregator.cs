@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Text;
 using System.Text.Json;
@@ -16,8 +17,8 @@ internal sealed class OpenApiAggregator
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OpenApiAggregator> _logger;
+    private readonly ConcurrentDictionary<string, string> _cachedSpecs = new();
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private string? _cachedSpec;
 
     public OpenApiAggregator(
         IHttpClientFactory httpClientFactory,
@@ -28,20 +29,22 @@ internal sealed class OpenApiAggregator
     }
 
     public async Task<string> GetAggregatedSpecAsync(
+        string version = "v1",
         bool refresh = false,
         CancellationToken ct = default)
     {
-        if (!refresh && _cachedSpec is not null)
-            return _cachedSpec;
+        if (!refresh && _cachedSpecs.TryGetValue(version, out var cached))
+            return cached;
 
         await _lock.WaitAsync(ct);
         try
         {
-            if (!refresh && _cachedSpec is not null)
-                return _cachedSpec;
+            if (!refresh && _cachedSpecs.TryGetValue(version, out cached))
+                return cached;
 
-            _cachedSpec = await BuildMergedSpecAsync(ct);
-            return _cachedSpec;
+            var spec = await BuildMergedSpecAsync(version, ct);
+            _cachedSpecs[version] = spec;
+            return spec;
         }
         finally
         {
@@ -49,7 +52,7 @@ internal sealed class OpenApiAggregator
         }
     }
 
-    private async Task<string> BuildMergedSpecAsync(CancellationToken ct)
+    private async Task<string> BuildMergedSpecAsync(string version, CancellationToken ct)
     {
         var specs = new List<(string Tag, JsonDocument Doc)>();
 
@@ -59,7 +62,7 @@ internal sealed class OpenApiAggregator
             {
                 var client = _httpClientFactory.CreateClient(tag);
                 using var response = await client.GetAsync(
-                    $"{baseAddress}/openapi/v1.json", ct);
+                    $"{baseAddress}/openapi/{version}.json", ct);
                 response.EnsureSuccessStatusCode();
 
                 var stream = await response.Content.ReadAsStreamAsync(ct);
@@ -69,17 +72,17 @@ internal sealed class OpenApiAggregator
             catch (Exception ex)
             {
                 _logger.LogWarning(ex,
-                    "Failed to fetch OpenAPI spec from {Service}. Omitting from aggregated spec.",
-                    tag);
+                    "Failed to fetch OpenAPI spec from {Service} for version {Version}. Omitting from aggregated spec.",
+                    tag, version);
             }
         }
 
-        var result = MergeSpecs(specs);
+        var result = MergeSpecs(specs, version);
         foreach (var (_, doc) in specs) doc.Dispose();
         return result;
     }
 
-    private static string MergeSpecs(List<(string Tag, JsonDocument Doc)> specs)
+    private static string MergeSpecs(List<(string Tag, JsonDocument Doc)> specs, string version)
     {
         using var stream = new MemoryStream();
         using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
@@ -89,7 +92,7 @@ internal sealed class OpenApiAggregator
 
         writer.WriteStartObject("info");
         writer.WriteString("title", "eShopping API");
-        writer.WriteString("version", "v1");
+        writer.WriteString("version", version);
         writer.WriteEndObject();
 
         writer.WriteStartObject("paths");

@@ -12,6 +12,8 @@ internal static class SetStockEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapPut("/{productId:guid}", Handle)
             .WithName("SetStock")
+            .WithSummary("Set stock level")
+            .WithDescription("Sets the absolute stock quantity for a product. Internal service endpoint protected by network topology.")
             .Produces<StockResponse>()
             .ProducesValidationProblem();
 
@@ -23,4 +25,6 @@ internal static class SetStockEndpoint
         (await sender.Send(new SetStockCommand(productId, request.AvailableQuantity), ct)).ToHttpResult();
 }
 
+/// <summary>Request payload for setting stock level.</summary>
+/// <param name="AvailableQuantity">Absolute stock quantity to set. Must be zero or positive.</param>
 internal sealed record SetStockRequest(int AvailableQuantity);

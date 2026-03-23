@@ -10,6 +10,8 @@ internal static class UpsertBasketItemEndpoint
     public static void Map(RouteGroupBuilder group) =>
         group.MapPut("/{username}/items", Handle)
             .WithName("UpsertBasketItem")
+            .WithSummary("Add or update basket item")
+            .WithDescription("Adds a product to the basket or updates its quantity if already present. Validates product existence and stock availability.")
             .Produces<BasketResponse>()
             .ProducesProblem(400)
             .ProducesProblem(404)

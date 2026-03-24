@@ -4,6 +4,7 @@ using Gateway.API.OpenApi;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Http.Resilience;
 using Scalar.AspNetCore;
 using ServiceDefaults;
 using Yarp.ReverseProxy.Transforms;
@@ -11,6 +12,19 @@ using Yarp.ReverseProxy.Transforms;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+builder.Services.AddHttpClient(OpenApiAggregator.HttpClientName)
+    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(60));
+
+builder.Services.Configure<HttpStandardResilienceOptions>(
+    OpenApiAggregator.HttpClientName,
+    options =>
+    {
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(120);
+    });
+
 builder.Services.AddSingleton<OpenApiAggregator>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

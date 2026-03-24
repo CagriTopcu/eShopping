@@ -37,8 +37,8 @@
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["http://localhost:*/*", "https://localhost:*/*"],
-      "webOrigins": ["http://localhost:*", "https://localhost:*"],
+      "redirectUris": ["http://localhost:*/*", "https://localhost:*/*", "http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:*", "https://localhost:*", "http://localhost:3000"],
       "protocol": "openid-connect",
       "fullScopeAllowed": true
     }

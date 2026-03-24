@@ -7,6 +7,8 @@ namespace Gateway.API.OpenApi;
 
 internal sealed class OpenApiAggregator
 {
+    public const string HttpClientName = "OpenApiAggregator";
+
     private static readonly FrozenDictionary<string, string> ServiceBaseAddresses =
         new Dictionary<string, string>
         {
@@ -60,7 +62,7 @@ internal sealed class OpenApiAggregator
         {
             try
             {
-                var client = _httpClientFactory.CreateClient(tag);
+                var client = _httpClientFactory.CreateClient(HttpClientName);
                 using var response = await client.GetAsync(
                     $"{baseAddress}/openapi/{version}.json", ct);
                 response.EnsureSuccessStatusCode();

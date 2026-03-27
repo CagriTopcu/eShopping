@@ -10,6 +10,7 @@ internal static class ProductEndpoints
         UpdateProductEndpoint.Map(group);
         DeleteProductEndpoint.Map(group);
         AdjustStockEndpoint.Map(group);
+        GetCatalogStatsEndpoint.Map(group);
 
         return group;
     }

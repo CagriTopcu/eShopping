@@ -8,6 +8,9 @@ internal static class OrderEndpoints
         GetOrdersByUserEndpoint.Map(group);
         GetOrderByIdEndpoint.Map(group);
         CancelOrderEndpoint.Map(group);
+        GetAllOrdersEndpoint.Map(group);
+        AdminCancelOrderEndpoint.Map(group);
+        GetOrderStatsEndpoint.Map(group);
 
         return group;
     }

@@ -1,4 +1,5 @@
 using Catalog.Application.Abstractions;
+using Catalog.Application.DTOs;
 using Catalog.Application.ReadModels;
 using Catalog.Infrastructure.Persistence.Elasticsearch;
 using Elastic.Clients.Elasticsearch;
@@ -74,9 +75,35 @@ internal sealed class ProductElasticsearchReadRepository(ElasticsearchClient cli
              }));
         }, ct);
 
+        if (!response.IsValidResponse)
+        {
+            return (Array.Empty<ProductReadModel>(), 0);
+        }
+
         var items = response.Documents.ToList();
         var total = (int)response.Total;
         return (items.AsReadOnly(), total);
+    }
+
+    public async Task<CatalogStatsResponse> GetStatsAsync(CancellationToken ct = default)
+    {
+        // Get all active products (for counting and category extraction)
+        var allResponse = await client.SearchAsync<ProductReadModel>(s =>
+        {
+            s.Index(CatalogIndexMapping.IndexName)
+             .Size(10000)
+             .Query(q => q.Term(t => t.Field(p => p.IsDeleted).Value(false)));
+        }, ct);
+
+        if (!allResponse.IsValidResponse)
+            return new CatalogStatsResponse(0, 0, []);
+
+        var products = allResponse.Documents.ToList();
+        var totalProducts = products.Count;
+        var lowStockCount = products.Count(p => p.Stock < 10);
+        var categories = products.Select(p => p.Category).Distinct().OrderBy(c => c).ToList();
+
+        return new CatalogStatsResponse(totalProducts, lowStockCount, categories);
     }
 
     public async Task UpsertAsync(ProductReadModel model, CancellationToken ct = default)

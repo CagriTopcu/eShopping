@@ -1,9 +1,11 @@
 using Catalog.Application.Abstractions;
 using Catalog.Domain.Entities;
 using Mapster;
+using MassTransit;
 using MediatR;
 using Shared.BuildingBlocks.CQRS;
 using Shared.BuildingBlocks.Results;
+using Shared.Contracts.Events.Catalog;
 using Catalog.Application.ReadModels;
 
 namespace Catalog.Application.Commands.CreateProduct;
@@ -11,7 +13,8 @@ namespace Catalog.Application.Commands.CreateProduct;
 internal sealed class CreateProductCommandHandler(
     IProductWriteRepository writeRepository,
     IProductReadRepository readRepository,
-    IPublisher publisher)
+    IPublisher publisher,
+    IPublishEndpoint publishEndpoint)
     : ICommandHandler<CreateProductCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(
@@ -39,6 +42,16 @@ internal sealed class CreateProductCommandHandler(
             await publisher.Publish(domainEvent, cancellationToken);
 
         product.ClearDomainEvents();
+
+        await publishEndpoint.Publish(
+            new ProductCreatedIntegrationEvent(
+                product.Id.Value,
+                product.Name.Value,
+                product.Category.Name,
+                product.Price.Amount,
+                product.Price.Currency,
+                product.Stock.Value),
+            cancellationToken);
 
         return product.Id.Value;
     }

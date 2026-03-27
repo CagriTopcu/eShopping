@@ -2,13 +2,14 @@ import { useParams, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { RoleGate } from "@/features/auth/components/RoleGate.tsx";
 import { ROLES } from "@/config/constants.ts";
 import { useProduct } from "@/features/catalog/api/catalog.queries.ts";
 import {
   useCreateProduct,
   useUpdateProduct,
+  useAdjustStock,
 } from "@/features/catalog/api/catalog.mutations.ts";
 import { Button } from "@/shared/components/ui/Button.tsx";
 import { Input } from "@/shared/components/ui/Input.tsx";
@@ -41,6 +42,8 @@ function AdminProductEditContent() {
   const { data: product, isLoading } = useProduct(isNew ? "" : productId);
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct(productId);
+  const adjustStock = useAdjustStock(productId);
+  const [stockDelta, setStockDelta] = useState(0);
 
   const {
     register,
@@ -211,6 +214,56 @@ function AdminProductEditContent() {
           </Button>
         </div>
       </form>
+
+      {!isNew && product && (
+        <div className="mt-6 rounded-lg border border-border bg-card p-6 space-y-4">
+          <h2 className="text-lg font-semibold">Stok Yonetimi</h2>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">Mevcut Stok:</span>
+            <span
+              className={`text-2xl font-bold ${product.stock > 0 ? "text-success" : "text-destructive"}`}
+            >
+              {product.stock}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {[-10, -5, -1, 1, 5, 10].map((delta) => (
+              <Button
+                key={delta}
+                type="button"
+                variant={delta > 0 ? "outline" : "ghost"}
+                size="sm"
+                disabled={adjustStock.isPending}
+                onClick={() => adjustStock.mutate(delta)}
+              >
+                {delta > 0 ? `+${delta}` : delta}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Input
+              type="number"
+              value={stockDelta}
+              onChange={(e) => setStockDelta(Number(e.target.value))}
+              placeholder="Miktar"
+              className="w-32"
+            />
+            <Button
+              type="button"
+              disabled={adjustStock.isPending || stockDelta === 0}
+              onClick={() => {
+                adjustStock.mutate(stockDelta, {
+                  onSuccess: () => setStockDelta(0),
+                });
+              }}
+            >
+              {adjustStock.isPending ? "Guncelleniyor..." : "Stok Guncelle"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

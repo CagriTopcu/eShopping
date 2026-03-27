@@ -112,6 +112,20 @@ export interface OrderItemRequest {
   quantity: number;
 }
 
+export interface CatalogStatsResponse {
+  totalProducts: number;
+  lowStockCount: number;
+  categories: string[];
+}
+
+export interface OrderStatsResponse {
+  totalOrders: number;
+  pendingOrders: number;
+  confirmedOrders: number;
+  cancelledOrders: number;
+  totalRevenue: number;
+}
+
 export interface ProductFilters {
   category?: string;
   name?: string;

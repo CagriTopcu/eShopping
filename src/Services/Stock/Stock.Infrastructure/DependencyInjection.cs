@@ -23,6 +23,7 @@ public static class DependencyInjection
         {
             x.AddConsumer<ReserveStockConsumer>();
             x.AddConsumer<ReleaseStockConsumer>();
+            x.AddConsumer<ProductCreatedConsumer>();
 
             x.UsingRabbitMq((ctx, cfg) =>
             {

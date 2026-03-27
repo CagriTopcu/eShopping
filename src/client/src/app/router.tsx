@@ -97,6 +97,22 @@ const adminProductEditRoute = createRoute({
   ),
 });
 
+const adminOrdersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/orders",
+  component: lazyRouteComponent(
+    () => import("@/features/admin/pages/AdminOrdersPage.tsx"),
+  ),
+});
+
+const adminOrderDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/orders/$orderId",
+  component: lazyRouteComponent(
+    () => import("@/features/admin/pages/AdminOrderDetailPage.tsx"),
+  ),
+});
+
 const authCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/auth/callback",
@@ -118,6 +134,8 @@ const routeTree = rootRoute.addChildren([
   adminRoute,
   adminProductsRoute,
   adminProductEditRoute,
+  adminOrdersRoute,
+  adminOrderDetailRoute,
   authCallbackRoute,
 ]);
 

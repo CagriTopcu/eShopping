@@ -15,7 +15,7 @@ internal sealed class CancelOrderCommandHandler(IOrderRepository orderRepository
         if (order is null)
             return OrderErrors.NotFound;
 
-        if (order.CustomerId != request.CustomerId)
+        if (!request.IsAdmin && order.CustomerId != request.CustomerId)
             return Error.Forbidden("Order.Forbidden", "You do not have permission to cancel this order.");
 
         var result = order.Cancel();

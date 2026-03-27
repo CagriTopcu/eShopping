@@ -1,3 +1,4 @@
+using Catalog.Application.DTOs;
 using Catalog.Application.ReadModels;
 using Shared.BuildingBlocks.Pagination;
 
@@ -14,6 +15,8 @@ public interface IProductReadRepository
         decimal? maxPrice,
         PaginationParams pagination,
         CancellationToken ct = default);
+
+    Task<CatalogStatsResponse> GetStatsAsync(CancellationToken ct = default);
 
     Task UpsertAsync(ProductReadModel model, CancellationToken ct = default);
     Task MarkDeletedAsync(Guid id, CancellationToken ct = default);

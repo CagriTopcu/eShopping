@@ -18,7 +18,16 @@ public sealed class ReleaseStockConsumer(
         foreach (var item in command.Items)
         {
             var stockItem = await stockRepository.GetByProductIdAsync(item.ProductId, context.CancellationToken);
-            stockItem?.Release(item.Quantity);
+
+            if (stockItem is null)
+            {
+                logger.LogWarning(
+                    "Stock record not found for product {ProductId} during release for order {OrderId}. Skipping.",
+                    item.ProductId, command.OrderId);
+                continue;
+            }
+
+            stockItem.Release(item.Quantity);
         }
 
         await stockRepository.SaveChangesAsync(context.CancellationToken);

@@ -4,11 +4,14 @@ using Catalog.Application.ReadModels;
 using Catalog.Infrastructure.Persistence.Elasticsearch;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.QueryDsl;
+using Microsoft.Extensions.Logging;
 using Shared.BuildingBlocks.Pagination;
 
 namespace Catalog.Infrastructure.Persistence.Repositories;
 
-internal sealed class ProductElasticsearchReadRepository(ElasticsearchClient client)
+internal sealed class ProductElasticsearchReadRepository(
+    ElasticsearchClient client,
+    ILogger<ProductElasticsearchReadRepository> logger)
     : IProductReadRepository
 {
     public async Task<ProductReadModel?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -77,6 +80,9 @@ internal sealed class ProductElasticsearchReadRepository(ElasticsearchClient cli
 
         if (!response.IsValidResponse)
         {
+            logger.LogWarning(
+                "Elasticsearch paged query failed. DebugInformation: {DebugInfo}",
+                response.DebugInformation);
             return (Array.Empty<ProductReadModel>(), 0);
         }
 
@@ -87,21 +93,36 @@ internal sealed class ProductElasticsearchReadRepository(ElasticsearchClient cli
 
     public async Task<CatalogStatsResponse> GetStatsAsync(CancellationToken ct = default)
     {
-        // Get all active products (for counting and category extraction)
-        var allResponse = await client.SearchAsync<ProductReadModel>(s =>
+        var response = await client.SearchAsync<ProductReadModel>(s =>
         {
             s.Index(CatalogIndexMapping.IndexName)
-             .Size(10000)
-             .Query(q => q.Term(t => t.Field(p => p.IsDeleted).Value(false)));
+             .Size(0)
+             .Query(q => q.Term(t => t.Field(p => p.IsDeleted).Value(false)))
+             .Aggregations(agg => agg
+                 .Add("categories", a => a.Terms(t => t.Field(p => p.Category).Size(500)))
+                 .Add("low_stock", a => a.Filter(f => f.Range(r => r.NumberRange(
+                     nr => nr.Field(p => p.Stock).Lt(10))))));
         }, ct);
 
-        if (!allResponse.IsValidResponse)
+        if (!response.IsValidResponse)
+        {
+            logger.LogWarning(
+                "Elasticsearch stats aggregation failed. DebugInformation: {DebugInfo}",
+                response.DebugInformation);
             return new CatalogStatsResponse(0, 0, []);
+        }
 
-        var products = allResponse.Documents.ToList();
-        var totalProducts = products.Count;
-        var lowStockCount = products.Count(p => p.Stock < 10);
-        var categories = products.Select(p => p.Category).Distinct().OrderBy(c => c).ToList();
+        var totalProducts = (int)response.Total;
+
+        var lowStockAgg = response.Aggregations?.GetFilter("low_stock");
+        var lowStockCount = (int)(lowStockAgg?.DocCount ?? 0);
+
+        var categoriesAgg = response.Aggregations?.GetStringTerms("categories");
+        var categories = categoriesAgg?.Buckets
+            .Select(b => b.Key.Value?.ToString() ?? "")
+            .Where(c => !string.IsNullOrEmpty(c))
+            .OrderBy(c => c)
+            .ToList() ?? [];
 
         return new CatalogStatsResponse(totalProducts, lowStockCount, categories);
     }

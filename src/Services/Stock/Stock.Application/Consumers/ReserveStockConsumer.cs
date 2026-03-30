@@ -67,7 +67,16 @@ public sealed class ReserveStockConsumer(
         foreach (var (productId, quantity) in reservedItems)
         {
             var item = await stockRepository.GetByProductIdAsync(productId, ct);
-            item?.Release(quantity);
+
+            if (item is null)
+            {
+                logger.LogWarning(
+                    "Stock record not found for product {ProductId} during rollback for order {OrderId}. Rollback incomplete.",
+                    productId, orderId);
+                continue;
+            }
+
+            item.Release(quantity);
         }
 
         if (reservedItems.Count > 0)

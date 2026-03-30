@@ -39,7 +39,9 @@ public sealed class ProcessPaymentActivity(
                 order.Cancel();
                 logger.LogWarning("Order {OrderId} cancelled — payment failed", saga.CorrelationId);
 
-                var items = JsonSerializer.Deserialize<List<OrderItemDto>>(saga.ItemsJson)!;
+                var items = JsonSerializer.Deserialize<List<OrderItemDto>>(saga.ItemsJson)
+                    ?? throw new InvalidOperationException(
+                        $"Failed to deserialize ItemsJson for order saga {saga.CorrelationId}. Data may be corrupted.");
                 await context.Publish(new ReleaseStockCommand(
                     saga.CorrelationId,
                     items.Select(i => new StockCommandItem(i.ProductId, i.Quantity)).ToList()),

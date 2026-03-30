@@ -37,11 +37,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Authority = $"{baseUrl}/realms/{realm}";
         options.RequireHttpsMetadata = false;
         options.TokenValidationParameters.ValidateAudience = false;
-        options.BackchannelHttpHandler = new HttpClientHandler
+        if (builder.Environment.IsDevelopment())
         {
-            ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-        };
+            options.BackchannelHttpHandler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+        }
     });
 
 builder.Services.AddAuthorizationBuilder()

@@ -46,16 +46,24 @@ internal sealed class OrderRepository(OrderDbContext dbContext) : IOrderReposito
 
     public async Task<OrderStatsResponse> GetStatsAsync(CancellationToken ct = default)
     {
-        var totalOrders = await dbContext.Orders.CountAsync(ct);
-        var pendingOrders = await dbContext.Orders.CountAsync(o => o.Status == OrderStatus.Pending, ct);
-        var confirmedOrders = await dbContext.Orders.CountAsync(o => o.Status == OrderStatus.Confirmed, ct);
-        var cancelledOrders = await dbContext.Orders.CountAsync(o => o.Status == OrderStatus.Cancelled, ct);
-        var totalRevenue = await dbContext.Orders
-            .Where(o => o.Status == OrderStatus.Confirmed)
-            .SelectMany(o => o.Items)
-            .SumAsync(i => i.UnitPrice * i.Quantity, ct);
+        var stats = await dbContext.Orders
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Pending = g.Count(o => o.Status == OrderStatus.Pending),
+                Confirmed = g.Count(o => o.Status == OrderStatus.Confirmed),
+                Cancelled = g.Count(o => o.Status == OrderStatus.Cancelled),
+                Revenue = g
+                    .Where(o => o.Status == OrderStatus.Confirmed)
+                    .SelectMany(o => o.Items)
+                    .Sum(i => i.UnitPrice * i.Quantity)
+            })
+            .FirstOrDefaultAsync(ct);
 
-        return new OrderStatsResponse(totalOrders, pendingOrders, confirmedOrders, cancelledOrders, totalRevenue);
+        return stats is null
+            ? new OrderStatsResponse(0, 0, 0, 0, 0)
+            : new OrderStatsResponse(stats.Total, stats.Pending, stats.Confirmed, stats.Cancelled, stats.Revenue);
     }
 
     public async Task AddAsync(Order.Domain.Entities.Order order, CancellationToken ct = default) =>

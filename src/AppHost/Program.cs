@@ -63,10 +63,17 @@ var orderApi = builder.AddProject<Projects.Order_API>("order-api")
     .WaitFor(orderDb)
     .WaitFor(rabbit);
 
-builder.AddProject<Projects.Gateway_API>("gateway-api")
+var gatewayApi = builder.AddProject<Projects.Gateway_API>("gateway-api")
     .WithReference(catalogApi)
     .WithReference(basketApi)
     .WithReference(orderApi)
     .WithReference(keycloak);
+
+builder.AddNpmApp("react-client", "../client", "dev")
+    .WithHttpEndpoint(port: 3000, targetPort: 5173)
+    .WithExternalHttpEndpoints()
+    .WithReference(gatewayApi)
+    .WaitFor(gatewayApi)
+    .WaitFor(keycloak);
 
 builder.Build().Run();

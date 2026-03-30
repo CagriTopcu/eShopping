@@ -9,8 +9,11 @@ type RequestOptions = {
   signal?: AbortSignal;
 };
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 let getAccessToken: (() => string | undefined) | null = null;
 let onUnauthorized: (() => void) | null = null;
+let isRedirectingTo401 = false;
 
 export function configureApiClient(options: {
   getAccessToken: () => string | undefined;
@@ -61,15 +64,31 @@ export async function apiRequest<T>(
     requestHeaders["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    method,
-    headers: requestHeaders,
-    body: body ? JSON.stringify(body) : undefined,
-    signal,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+  if (signal) {
+    signal.addEventListener("abort", () => controller.abort(), { once: true });
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers: requestHeaders,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (response.status === 401) {
-    onUnauthorized?.();
+    if (!isRedirectingTo401) {
+      isRedirectingTo401 = true;
+      onUnauthorized?.();
+      setTimeout(() => { isRedirectingTo401 = false; }, 3000);
+    }
     throw new ApiRequestError(normalizeError(401, null));
   }
 

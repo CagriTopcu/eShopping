@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
@@ -137,6 +139,39 @@ public static class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
+        app.UseExceptionHandler(errorApp =>
+        {
+            errorApp.Run(async context =>
+            {
+                var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("GlobalExceptionHandler");
+
+                var exceptionFeature = context.Features
+                    .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+
+                if (exceptionFeature?.Error is { } error)
+                {
+                    logger.LogError(error,
+                        "Unhandled exception on {Method} {Path}",
+                        context.Request.Method, context.Request.Path);
+                }
+
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                context.Response.ContentType = "application/problem+json";
+
+                var problem = new
+                {
+                    type = "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+                    title = "An unexpected error occurred",
+                    status = 500,
+                    traceId = context.TraceIdentifier
+                };
+
+                await context.Response.WriteAsync(
+                    JsonSerializer.Serialize(problem, JsonSerializerOptions.Web));
+            });
+        });
+
         app.MapHealthChecks("/health");
 
         app.MapHealthChecks("/alive", new HealthCheckOptions

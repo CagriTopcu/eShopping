@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 
 namespace Gateway.API.Auth;
 
-internal sealed class KeycloakRolesClaimsTransformation : IClaimsTransformation
+internal sealed class KeycloakRolesClaimsTransformation(
+    ILogger<KeycloakRolesClaimsTransformation> logger) : IClaimsTransformation
 {
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
@@ -35,9 +37,11 @@ internal sealed class KeycloakRolesClaimsTransformation : IClaimsTransformation
                 }
             }
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
-            // Malformed claim — skip role mapping silently.
+            logger.LogWarning(ex,
+                "Failed to parse realm_access claim for user {Sub}. No Keycloak roles will be mapped.",
+                principal.FindFirst("sub")?.Value ?? "unknown");
         }
 
         return Task.FromResult(cloned);

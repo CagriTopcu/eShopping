@@ -1,12 +1,15 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Gateway.API.Auth;
 using Gateway.API.OpenApi;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Http.Resilience;
 using Scalar.AspNetCore;
 using ServiceDefaults;
+using ServiceDefaults.CorrelationId;
 using Yarp.ReverseProxy.Transforms;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +59,38 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddScoped<IClaimsTransformation, KeycloakRolesClaimsTransformation>();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Per-user policy: authenticated users get their own bucket based on user ID
+    options.AddPolicy("per-user", context =>
+    {
+        var userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+        return RateLimitPartition.GetTokenBucketLimiter(userId, _ => new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = 100,
+            ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+            TokensPerPeriod = 50,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 10,
+            AutoReplenishment = true
+        });
+    });
+
+    // Global fixed window — protects against unauthenticated floods
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        return RateLimitPartition.GetFixedWindowLimiter("global", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 1000,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 50
+        });
+    });
+});
+
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .AddServiceDiscoveryDestinationResolver()
@@ -63,6 +98,16 @@ builder.Services.AddReverseProxy()
     {
         ctx.AddRequestTransform(async transformCtx =>
         {
+            // Propagate correlation ID to downstream services
+            if (transformCtx.HttpContext.Items.TryGetValue(
+                    CorrelationIdMiddleware.ItemKey, out var correlationId)
+                && correlationId is string cid)
+            {
+                transformCtx.ProxyRequest.Headers.Remove(CorrelationIdMiddleware.HeaderName);
+                transformCtx.ProxyRequest.Headers
+                    .TryAddWithoutValidation(CorrelationIdMiddleware.HeaderName, cid);
+            }
+
             transformCtx.ProxyRequest.Headers.Remove("X-User-Id");
             transformCtx.ProxyRequest.Headers.Remove("X-User-Name");
             transformCtx.ProxyRequest.Headers.Remove("X-User-Roles");
@@ -126,11 +171,7 @@ app.MapDefaultEndpoints();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.MapGet("/health", () =>
-    TypedResults.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }))
-    .WithName("HealthCheck")
-    .WithTags("Gateway");
+app.UseRateLimiter();
 
 app.MapReverseProxy();
 

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Order.Application.Abstractions;
 using Order.Domain.Errors;
 using Shared.BuildingBlocks.CQRS;
@@ -5,7 +6,9 @@ using Shared.BuildingBlocks.Results;
 
 namespace Order.Application.Commands.CancelOrder;
 
-internal sealed class CancelOrderCommandHandler(IOrderRepository orderRepository)
+internal sealed class CancelOrderCommandHandler(
+    IOrderRepository orderRepository,
+    ILogger<CancelOrderCommandHandler> logger)
     : ICommandHandler<CancelOrderCommand>
 {
     public async Task<Result> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
@@ -24,6 +27,10 @@ internal sealed class CancelOrderCommandHandler(IOrderRepository orderRepository
             return result;
 
         await orderRepository.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Order {OrderId} cancelled for customer {CustomerId}",
+            request.OrderId, order.CustomerId);
 
         return Result.Success();
     }

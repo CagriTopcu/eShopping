@@ -4,6 +4,7 @@ using Catalog.Domain.Errors;
 using Catalog.Domain.ValueObjects;
 using Mapster;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Shared.BuildingBlocks.CQRS;
 using Shared.BuildingBlocks.Results;
 
@@ -12,7 +13,8 @@ namespace Catalog.Application.Commands.AdjustStock;
 internal sealed class AdjustStockCommandHandler(
     IProductWriteRepository writeRepository,
     IProductReadRepository readRepository,
-    IPublisher publisher)
+    IPublisher publisher,
+    ILogger<AdjustStockCommandHandler> logger)
     : ICommandHandler<AdjustStockCommand>
 {
     public async Task<Result> Handle(
@@ -36,6 +38,10 @@ internal sealed class AdjustStockCommandHandler(
             await publisher.Publish(domainEvent, cancellationToken);
 
         product.ClearDomainEvents();
+
+        logger.LogInformation(
+            "Product {ProductId} stock adjusted by {Delta}, new stock {Stock}",
+            product.Id.Value, request.Delta, product.Stock.Value);
 
         return Result.Success();
     }

@@ -3,6 +3,7 @@ using Catalog.Domain.Entities;
 using Mapster;
 using MassTransit;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Shared.BuildingBlocks.CQRS;
 using Shared.BuildingBlocks.Results;
 using Shared.Contracts.Events.Catalog;
@@ -14,7 +15,8 @@ internal sealed class CreateProductCommandHandler(
     IProductWriteRepository writeRepository,
     IProductReadRepository readRepository,
     IPublisher publisher,
-    IPublishEndpoint publishEndpoint)
+    IPublishEndpoint publishEndpoint,
+    ILogger<CreateProductCommandHandler> logger)
     : ICommandHandler<CreateProductCommand, Guid>
 {
     public async Task<Result<Guid>> Handle(
@@ -52,6 +54,11 @@ internal sealed class CreateProductCommandHandler(
                 product.Price.Currency,
                 product.Stock.Value),
             cancellationToken);
+
+        logger.LogInformation(
+            "Product {ProductId} created: {Name}, category {Category}, price {Price} {Currency}, initial stock {Stock}",
+            product.Id.Value, product.Name.Value, product.Category.Name,
+            product.Price.Amount, product.Price.Currency, product.Stock.Value);
 
         return product.Id.Value;
     }

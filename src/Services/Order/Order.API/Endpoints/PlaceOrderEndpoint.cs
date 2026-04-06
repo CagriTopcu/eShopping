@@ -4,6 +4,7 @@ using Order.Application.Commands.PlaceOrder;
 using Order.Application.DTOs;
 using ServiceDefaults;
 using Shared.BuildingBlocks.Extensions;
+using Shared.BuildingBlocks.Idempotency;
 
 namespace Order.API.Endpoints;
 
@@ -16,7 +17,8 @@ internal static class PlaceOrderEndpoint
             .WithDescription("Creates an order from the provided items. Triggers payment reservation and stock reservation via saga orchestration.")
             .Produces<OrderResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
-            .RequireAuthorization("RequireCustomer");
+            .RequireAuthorization("RequireCustomer")
+            .WithIdempotency();
 
     private static async Task<IResult> Handle(
         PlaceOrderRequest request,

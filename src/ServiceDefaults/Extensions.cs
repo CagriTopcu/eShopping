@@ -9,8 +9,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
 using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using ServiceDefaults.CorrelationId;
+using ServiceDefaults.Observability;
 
 namespace ServiceDefaults;
 
@@ -19,12 +23,21 @@ public static class Extensions
     public static IHostApplicationBuilder AddServiceDefaults(this IHostApplicationBuilder builder)
     {
         builder.ConfigureOpenTelemetry();
+        builder.AddStructuredLogging();
         builder.AddDefaultHealthChecks();
 
+        // Ensure OpenTelemetry log provider receives Information+ logs
+        // even when Serilog filters are more restrictive on its own pipeline
+        builder.Logging.AddFilter<OpenTelemetry.Logs.OpenTelemetryLoggerProvider>(
+            null, LogLevel.Information);
+
         builder.Services.AddServiceDiscovery();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddTransient<CorrelationIdDelegatingHandler>();
 
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
+            http.AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
             http.AddStandardResilienceHandler();
             http.AddServiceDiscovery();
         });
@@ -38,6 +51,18 @@ public static class Extensions
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
+
+            // Export logs via OTLP HTTP directly to Loki
+            var lokiEndpoint = Environment.GetEnvironmentVariable("LOKI_OTLP_ENDPOINT")
+                ?? builder.Configuration["LOKI_OTLP_ENDPOINT"];
+            if (!string.IsNullOrWhiteSpace(lokiEndpoint))
+            {
+                logging.AddOtlpExporter(o =>
+                {
+                    o.Endpoint = new Uri(lokiEndpoint);
+                    o.Protocol = OtlpExportProtocol.HttpProtobuf;
+                });
+            }
         });
 
         builder.Services.AddOpenTelemetry()
@@ -46,13 +71,16 @@ public static class Extensions
                 metrics
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    .AddMeter("MassTransit");
             })
             .WithTracing(tracing =>
             {
                 tracing
                     .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation();
+                    .AddHttpClientInstrumentation()
+                    .AddSource("MassTransit")
+                    .AddSource("Microsoft.EntityFrameworkCore");
             });
 
         builder.AddOpenTelemetryExporters();
@@ -62,11 +90,32 @@ public static class Extensions
 
     private static IHostApplicationBuilder AddOpenTelemetryExporters(this IHostApplicationBuilder builder)
     {
-        var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
-
-        if (useOtlpExporter)
+        // Aspire Dashboard OTLP endpoint
+        var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
         {
-            builder.Services.AddOpenTelemetry().UseOtlpExporter();
+            builder.Services.AddOpenTelemetry()
+                .WithTracing(tracing => tracing.AddOtlpExporter("aspire", o =>
+                    o.Endpoint = new Uri(otlpEndpoint)))
+                .WithMetrics(metrics => metrics.AddOtlpExporter("aspire", o =>
+                    o.Endpoint = new Uri(otlpEndpoint)));
+        }
+
+        // OTel Collector → Grafana stack (Prometheus, Tempo, Loki)
+        var collectorEndpoint = builder.Configuration["OTEL_COLLECTOR_ENDPOINT"];
+        if (!string.IsNullOrWhiteSpace(collectorEndpoint))
+        {
+            builder.Services.AddOpenTelemetry()
+                .WithTracing(tracing => tracing.AddOtlpExporter("collector", o =>
+                {
+                    o.Endpoint = new Uri(collectorEndpoint);
+                    o.Protocol = OtlpExportProtocol.Grpc;
+                }))
+                .WithMetrics(metrics => metrics.AddOtlpExporter("collector", o =>
+                {
+                    o.Endpoint = new Uri(collectorEndpoint);
+                    o.Protocol = OtlpExportProtocol.Grpc;
+                }));
         }
 
         return builder;
@@ -139,6 +188,10 @@ public static class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
+        app.UseMiddleware<CorrelationIdMiddleware>();
+
+        app.UseMiddleware<RequestLoggingMiddleware>();
+
         app.UseExceptionHandler(errorApp =>
         {
             errorApp.Run(async context =>
@@ -159,12 +212,16 @@ public static class Extensions
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 context.Response.ContentType = "application/problem+json";
 
+                var correlationId = context.Items.TryGetValue(
+                    CorrelationIdMiddleware.ItemKey, out var cid) ? cid?.ToString() : null;
+
                 var problem = new
                 {
                     type = "https://tools.ietf.org/html/rfc9110#section-15.6.1",
                     title = "An unexpected error occurred",
                     status = 500,
-                    traceId = context.TraceIdentifier
+                    traceId = context.TraceIdentifier,
+                    correlationId
                 };
 
                 await context.Response.WriteAsync(
@@ -172,7 +229,10 @@ public static class Extensions
             });
         });
 
-        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/health", new HealthCheckOptions
+        {
+            ResponseWriter = WriteHealthCheckResponse
+        });
 
         app.MapHealthChecks("/alive", new HealthCheckOptions
         {
@@ -180,5 +240,27 @@ public static class Extensions
         });
 
         return app;
+    }
+
+    private static async Task WriteHealthCheckResponse(HttpContext context, HealthReport report)
+    {
+        context.Response.ContentType = "application/json";
+
+        var response = new
+        {
+            status = report.Status.ToString(),
+            totalDuration = report.TotalDuration.TotalMilliseconds,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                duration = e.Value.Duration.TotalMilliseconds,
+                description = e.Value.Description,
+                exception = e.Value.Exception?.Message
+            })
+        };
+
+        await context.Response.WriteAsync(
+            JsonSerializer.Serialize(response, JsonSerializerOptions.Web));
     }
 }

@@ -1,5 +1,6 @@
 using Mapster;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 using Order.Application.Abstractions;
 using Order.Application.DTOs;
 using Order.Domain.ValueObjects;
@@ -11,7 +12,8 @@ namespace Order.Application.Commands.PlaceOrder;
 
 internal sealed class PlaceOrderCommandHandler(
     IOrderRepository orderRepository,
-    IPublishEndpoint publishEndpoint)
+    IPublishEndpoint publishEndpoint,
+    ILogger<PlaceOrderCommandHandler> logger)
     : ICommandHandler<PlaceOrderCommand, OrderResponse>
 {
     public async Task<Result<OrderResponse>> Handle(PlaceOrderCommand request, CancellationToken cancellationToken)
@@ -46,6 +48,10 @@ internal sealed class PlaceOrderCommandHandler(
             cancellationToken);
 
         await orderRepository.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Order {OrderId} placed for customer {CustomerId} with {ItemCount} items, total {TotalAmount}",
+            result.Value.Id.Value, request.CustomerId, request.Items.Count, result.Value.TotalAmount);
 
         return result.Value.Adapt<OrderResponse>();
     }

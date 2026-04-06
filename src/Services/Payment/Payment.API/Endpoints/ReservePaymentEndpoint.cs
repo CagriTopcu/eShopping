@@ -1,6 +1,7 @@
 using MediatR;
 using Payment.Application.Commands.ReservePayment;
 using Shared.BuildingBlocks.Extensions;
+using Shared.BuildingBlocks.Idempotency;
 
 namespace Payment.API.Endpoints;
 
@@ -12,7 +13,8 @@ internal static class ReservePaymentEndpoint
             .WithSummary("Reserve payment")
             .WithDescription("Reserves funds for an order. Internal service endpoint called during order saga orchestration.")
             .Produces<ReservePaymentResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status402PaymentRequired);
+            .ProducesProblem(StatusCodes.Status402PaymentRequired)
+            .WithIdempotency();
 
     private static async Task<IResult> Handle(
         ReservePaymentRequest request,

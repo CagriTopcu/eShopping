@@ -4,6 +4,7 @@ using Catalog.Domain.Errors;
 using Catalog.Domain.ValueObjects;
 using Mapster;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Shared.BuildingBlocks.CQRS;
 using Shared.BuildingBlocks.Results;
 
@@ -12,7 +13,8 @@ namespace Catalog.Application.Commands.UpdateProduct;
 internal sealed class UpdateProductCommandHandler(
     IProductWriteRepository writeRepository,
     IProductReadRepository readRepository,
-    IPublisher publisher)
+    IPublisher publisher,
+    ILogger<UpdateProductCommandHandler> logger)
     : ICommandHandler<UpdateProductCommand>
 {
     public async Task<Result> Handle(
@@ -43,6 +45,10 @@ internal sealed class UpdateProductCommandHandler(
             await publisher.Publish(domainEvent, cancellationToken);
 
         product.ClearDomainEvents();
+
+        logger.LogInformation(
+            "Product {ProductId} updated: {Name}, price {Price} {Currency}",
+            product.Id.Value, product.Name.Value, product.Price.Amount, product.Price.Currency);
 
         return Result.Success();
     }

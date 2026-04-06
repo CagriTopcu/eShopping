@@ -4,10 +4,12 @@ using Payment.Application;
 using Payment.Infrastructure;
 using Scalar.AspNetCore;
 using ServiceDefaults;
+using Shared.BuildingBlocks.Idempotency;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.Services.AddIdempotencySupport();
 builder.Services.AddServiceOpenApi(
     "Payment API",
     "Payment processing service. Handles payment reservations, captures, and refunds for order processing.");

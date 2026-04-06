@@ -1,5 +1,6 @@
 using Catalog.Application.Abstractions;
 using Catalog.Infrastructure.Consumers;
+using Catalog.Infrastructure.HealthChecks;
 using Catalog.Infrastructure.Persistence;
 using Catalog.Infrastructure.Persistence.Elasticsearch;
 using Catalog.Infrastructure.Persistence.Indexes;
@@ -9,41 +10,46 @@ using Elastic.Clients.Elasticsearch;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
 
 namespace Catalog.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static IHostApplicationBuilder AddInfrastructure(this IHostApplicationBuilder builder)
     {
+        var configuration = builder.Configuration;
+
         var mongoConnectionString = configuration.GetConnectionString("catalog-db")
             ?? throw new InvalidOperationException(
                 "MongoDB connection string 'catalog-db' is not configured.");
 
         BsonMappingConfig.Register();
 
-        services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoConnectionString));
-        services.AddSingleton(sp =>
+        builder.Services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoConnectionString));
+        builder.Services.AddSingleton(sp =>
             sp.GetRequiredService<IMongoClient>().GetDatabase("catalog"));
-        services.AddSingleton<CatalogDbContext>();
+        builder.Services.AddSingleton<CatalogDbContext>();
 
         var esConnectionString = configuration.GetConnectionString("elasticsearch")
             ?? throw new InvalidOperationException(
                 "Elasticsearch connection string 'elasticsearch' is not configured.");
 
-        services.AddSingleton<ElasticsearchClient>(_ =>
+        builder.Services.AddSingleton<ElasticsearchClient>(_ =>
             new ElasticsearchClient(new Uri(esConnectionString)));
 
-        services.AddScoped<IProductWriteRepository, ProductWriteRepository>();
-        services.AddScoped<IProductReadRepository, ProductElasticsearchReadRepository>();
+        builder.Services.AddScoped<IProductWriteRepository, ProductWriteRepository>();
+        builder.Services.AddScoped<IProductReadRepository, ProductElasticsearchReadRepository>();
 
-        services.AddHostedService<CatalogElasticsearchInitializer>();
-        services.AddHostedService<CatalogDataSeeder>();
+        builder.Services.AddHostedService<CatalogElasticsearchInitializer>();
+        builder.Services.AddHostedService<CatalogDataSeeder>();
 
-        services.AddMassTransit(x =>
+        builder.Services.AddHealthChecks()
+            .AddCheck<MongoDbHealthCheck>("mongodb", tags: ["ready"])
+            .AddCheck<ElasticsearchHealthCheck>("elasticsearch", tags: ["ready"]);
+
+        builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<StockUpdatedConsumer>();
 
@@ -54,7 +60,7 @@ public static class DependencyInjection
             });
         });
 
-        return services;
+        return builder;
     }
 
     public static async Task EnsureIndexesAsync(IServiceProvider services)

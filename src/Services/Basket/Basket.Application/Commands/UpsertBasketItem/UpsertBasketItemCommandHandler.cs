@@ -2,6 +2,7 @@ using Basket.Application.Abstractions;
 using Basket.Application.DTOs;
 using Basket.Domain.Errors;
 using Mapster;
+using Microsoft.Extensions.Logging;
 using Shared.BuildingBlocks.CQRS;
 using Shared.BuildingBlocks.Results;
 
@@ -10,7 +11,8 @@ namespace Basket.Application.Commands.UpsertBasketItem;
 internal sealed class UpsertBasketItemCommandHandler(
     IBasketRepository basketRepository,
     ICatalogClient catalogClient,
-    IStockClient stockClient)
+    IStockClient stockClient,
+    ILogger<UpsertBasketItemCommandHandler> logger)
     : ICommandHandler<UpsertBasketItemCommand, BasketResponse>
 {
     public async Task<Result<BasketResponse>> Handle(
@@ -59,6 +61,10 @@ internal sealed class UpsertBasketItemCommandHandler(
             return result.Error;
 
         await basketRepository.SaveAsync(basket, cancellationToken);
+
+        logger.LogInformation(
+            "Basket item upserted for user {Username}: product {ProductId}, quantity {Quantity}",
+            request.Username, request.ProductId, request.Quantity);
 
         return basket.Adapt<BasketResponse>();
     }

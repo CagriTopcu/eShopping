@@ -1,3 +1,5 @@
+using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Payment.Application.Abstractions;
@@ -19,6 +21,21 @@ public static class DependencyInjection
         builder.Services.Configure<FakePaymentOptions>(
             builder.Configuration.GetSection("FakePayment"));
         builder.Services.AddScoped<IPaymentGateway, FakePaymentGateway>();
+
+        builder.Services.AddMassTransit(x =>
+        {
+            x.AddEntityFrameworkOutbox<PaymentDbContext>(o =>
+            {
+                o.UsePostgres();
+                o.UseBusOutbox();
+            });
+
+            x.UsingRabbitMq((ctx, cfg) =>
+            {
+                cfg.Host(builder.Configuration.GetConnectionString("rabbitmq"));
+                cfg.ConfigureEndpoints(ctx);
+            });
+        });
 
         return builder;
     }

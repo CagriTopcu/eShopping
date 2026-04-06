@@ -16,7 +16,7 @@ builder.Services.AddServiceAuthentication();
 builder.Services.AddAuthorizationPolicies();
 builder.Services.AddCurrentUser();
 builder.Services.AddApplication();
-builder.AddInfrastructure(builder.Configuration);
+builder.AddInfrastructure();
 
 var app = builder.Build();
 

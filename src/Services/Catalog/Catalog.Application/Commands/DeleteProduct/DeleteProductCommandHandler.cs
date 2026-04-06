@@ -2,6 +2,7 @@ using Catalog.Application.Abstractions;
 using Catalog.Domain.Errors;
 using Catalog.Domain.ValueObjects;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Shared.BuildingBlocks.CQRS;
 using Shared.BuildingBlocks.Results;
 
@@ -10,7 +11,8 @@ namespace Catalog.Application.Commands.DeleteProduct;
 internal sealed class DeleteProductCommandHandler(
     IProductWriteRepository writeRepository,
     IProductReadRepository readRepository,
-    IPublisher publisher)
+    IPublisher publisher,
+    ILogger<DeleteProductCommandHandler> logger)
     : ICommandHandler<DeleteProductCommand>
 {
     public async Task<Result> Handle(
@@ -34,6 +36,8 @@ internal sealed class DeleteProductCommandHandler(
             await publisher.Publish(domainEvent, cancellationToken);
 
         product.ClearDomainEvents();
+
+        logger.LogInformation("Product {ProductId} deleted", product.Id.Value);
 
         return Result.Success();
     }

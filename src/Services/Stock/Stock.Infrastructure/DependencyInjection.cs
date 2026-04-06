@@ -25,6 +25,12 @@ public static class DependencyInjection
             x.AddConsumer<ReleaseStockConsumer>();
             x.AddConsumer<ProductCreatedConsumer>();
 
+            x.AddEntityFrameworkOutbox<StockDbContext>(o =>
+            {
+                o.UsePostgres();
+                o.UseBusOutbox();
+            });
+
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 cfg.Host(builder.Configuration.GetConnectionString("rabbitmq"));

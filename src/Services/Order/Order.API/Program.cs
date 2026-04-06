@@ -4,10 +4,12 @@ using Order.Application;
 using Order.Infrastructure;
 using Scalar.AspNetCore;
 using ServiceDefaults;
+using Shared.BuildingBlocks.Idempotency;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.Services.AddIdempotencySupport();
 builder.Services.AddServiceOpenApi(
     "Order API",
     "Order management service. Handles order placement, tracking, and cancellation. Orchestrates payment and stock reservation via saga pattern.");

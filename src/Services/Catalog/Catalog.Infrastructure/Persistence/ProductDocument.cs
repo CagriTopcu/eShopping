@@ -13,7 +13,6 @@ internal sealed class ProductDocument
     public decimal Price { get; set; }
     public string Currency { get; set; } = null!;
     public string Category { get; set; } = null!;
-    public int Stock { get; set; }
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; }

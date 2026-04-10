@@ -18,6 +18,9 @@ internal sealed class OrderSagaStateConfiguration : IEntityTypeConfiguration<Ord
             .HasColumnType("text")
             .IsRequired();
 
+        builder.Property(s => s.TransactionId)
+            .HasMaxLength(128);
+
         builder.ToTable("order_saga_states");
     }
 }

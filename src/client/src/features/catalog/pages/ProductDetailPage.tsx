@@ -114,22 +114,6 @@ export default function ProductDetailPage() {
             {formatCurrency(product.price, product.currency)}
           </p>
 
-          {/* Stock status */}
-          <div className="mt-4 flex items-center gap-2">
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${product.stock > 0 ? "bg-success" : "bg-destructive"}`}
-            />
-            <span
-              className={`text-sm font-medium ${product.stock > 0 ? "text-success" : "text-destructive"}`}
-            >
-              {product.stock > 0
-                ? product.stock <= 5
-                  ? `Son ${product.stock} adet!`
-                  : `${product.stock} adet stokta`
-                : "Stokta yok"}
-            </span>
-          </div>
-
           {product.description && (
             <p className="mt-6 text-muted-foreground leading-relaxed">
               {product.description}
@@ -137,7 +121,7 @@ export default function ProductDetailPage() {
           )}
 
           {/* Quantity + Add to basket */}
-          {isAuthenticated && product.stock > 0 && (
+          {isAuthenticated && (
             <div className="mt-8 flex items-center gap-4">
               <div className="flex items-center border border-border rounded-lg">
                 <button
@@ -152,10 +136,10 @@ export default function ProductDetailPage() {
                 </span>
                 <button
                   onClick={() =>
-                    setQuantity((q) => Math.min(product.stock, q + 1))
+                    setQuantity((q) => Math.min(99, q + 1))
                   }
                   className="px-3 py-2 text-lg hover:bg-accent transition-colors rounded-r-lg"
-                  disabled={quantity >= product.stock}
+                  disabled={quantity >= 99}
                 >
                   +
                 </button>

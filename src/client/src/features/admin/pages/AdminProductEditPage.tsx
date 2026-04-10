@@ -9,8 +9,9 @@ import { useProduct } from "@/features/catalog/api/catalog.queries.ts";
 import {
   useCreateProduct,
   useUpdateProduct,
-  useAdjustStock,
 } from "@/features/catalog/api/catalog.mutations.ts";
+import { useStockByProduct } from "@/features/admin/api/admin.queries.ts";
+import { useSetStock } from "@/features/admin/api/admin.mutations.ts";
 import { Button } from "@/shared/components/ui/Button.tsx";
 import { Input } from "@/shared/components/ui/Input.tsx";
 import { Skeleton } from "@/shared/components/ui/Skeleton.tsx";
@@ -26,7 +27,7 @@ const productSchema = z.object({
   category: z.string().min(1, "Kategori zorunludur"),
   price: z.preprocess(toNumber, z.number().positive("Fiyat sıfırdan büyük olmalıdır")),
   currency: z.string().min(1, "Para birimi zorunludur"),
-  stock: z.preprocess(toNumber, z.number().int().min(0, "Stok negatif olamaz")),
+  initialStock: z.preprocess(toNumber, z.number().int().min(0, "Stok negatif olamaz")),
   description: z.string().optional(),
   imageUrl: z.string().url("Geçerli bir URL giriniz").or(z.literal("")).optional(),
 });
@@ -40,10 +41,11 @@ function AdminProductEditContent() {
   const isNew = productId === "new";
   const navigate = useNavigate();
   const { data: product, isLoading } = useProduct(isNew ? "" : productId);
+  const { data: stockData } = useStockByProduct(isNew ? "" : productId);
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct(productId);
-  const adjustStock = useAdjustStock(productId);
-  const [stockDelta, setStockDelta] = useState(0);
+  const setStock = useSetStock(productId);
+  const [newStockQuantity, setNewStockQuantity] = useState<number>(0);
 
   const {
     register,
@@ -54,7 +56,7 @@ function AdminProductEditContent() {
     resolver: zodResolver(productSchema) as never,
     defaultValues: {
       currency: "TRY",
-      stock: 0,
+      initialStock: 0,
     },
   });
 
@@ -65,12 +67,18 @@ function AdminProductEditContent() {
         category: product.category,
         price: product.price,
         currency: product.currency,
-        stock: product.stock,
+        initialStock: 0,
         description: product.description ?? "",
         imageUrl: product.imageUrl ?? "",
       });
     }
   }, [product, isNew, reset]);
+
+  useEffect(() => {
+    if (stockData) {
+      setNewStockQuantity(stockData.availableQuantity);
+    }
+  }, [stockData]);
 
   const onSubmit = (data: ProductFormData) => {
     if (isNew) {
@@ -80,7 +88,7 @@ function AdminProductEditContent() {
           category: data.category,
           price: data.price,
           currency: data.currency,
-          stock: data.stock,
+          initialStock: data.initialStock,
           description: data.description || undefined,
           imageUrl: data.imageUrl || undefined,
         },
@@ -109,6 +117,8 @@ function AdminProductEditContent() {
       </div>
     );
   }
+
+  const currentStock = stockData?.availableQuantity ?? 0;
 
   return (
     <div className="max-w-2xl">
@@ -166,9 +176,9 @@ function AdminProductEditContent() {
               </label>
               <Input
                 type="number"
-                {...register("stock")}
+                {...register("initialStock")}
                 placeholder="0"
-                error={errors.stock?.message}
+                error={errors.initialStock?.message}
               />
             </div>
           )}
@@ -218,26 +228,28 @@ function AdminProductEditContent() {
       {!isNew && product && (
         <div className="mt-6 rounded-lg border border-border bg-card p-6 space-y-4">
           <h2 className="text-lg font-semibold">Stok Yonetimi</h2>
+          <p className="text-xs text-muted-foreground">
+            Stok, Stock servisi tarafindan yonetilmektedir.
+          </p>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">Mevcut Stok:</span>
             <span
-              className={`text-2xl font-bold ${product.stock > 0 ? "text-success" : "text-destructive"}`}
+              className={`text-2xl font-bold ${currentStock > 0 ? "text-success" : "text-destructive"}`}
             >
-              {product.stock}
+              {currentStock}
             </span>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {[-10, -5, -1, 1, 5, 10].map((delta) => (
+            {[0, 10, 25, 50, 100].map((qty) => (
               <Button
-                key={delta}
+                key={qty}
                 type="button"
-                variant={delta > 0 ? "outline" : "ghost"}
+                variant={qty === newStockQuantity ? "default" : "outline"}
                 size="sm"
-                disabled={adjustStock.isPending}
-                onClick={() => adjustStock.mutate(delta)}
+                onClick={() => setNewStockQuantity(qty)}
               >
-                {delta > 0 ? `+${delta}` : delta}
+                {qty}
               </Button>
             ))}
           </div>
@@ -245,21 +257,18 @@ function AdminProductEditContent() {
           <div className="flex items-center gap-3">
             <Input
               type="number"
-              value={stockDelta}
-              onChange={(e) => setStockDelta(Number(e.target.value))}
-              placeholder="Miktar"
+              value={newStockQuantity}
+              onChange={(e) => setNewStockQuantity(Number(e.target.value))}
+              placeholder="Yeni stok miktari"
               className="w-32"
+              min={0}
             />
             <Button
               type="button"
-              disabled={adjustStock.isPending || stockDelta === 0}
-              onClick={() => {
-                adjustStock.mutate(stockDelta, {
-                  onSuccess: () => setStockDelta(0),
-                });
-              }}
+              disabled={setStock.isPending || newStockQuantity === currentStock}
+              onClick={() => setStock.mutate(newStockQuantity)}
             >
-              {adjustStock.isPending ? "Guncelleniyor..." : "Stok Guncelle"}
+              {setStock.isPending ? "Guncelleniyor..." : "Stok Guncelle"}
             </Button>
           </div>
         </div>

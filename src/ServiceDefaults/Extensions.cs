@@ -15,6 +15,8 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using ServiceDefaults.CorrelationId;
 using ServiceDefaults.Observability;
+using ServiceDefaults.Secrets;
+using Shared.BuildingBlocks.Observability;
 
 namespace ServiceDefaults;
 
@@ -22,15 +24,22 @@ public static class Extensions
 {
     public static IHostApplicationBuilder AddServiceDefaults(this IHostApplicationBuilder builder)
     {
+        // Load secrets from Vault into IConfiguration (no-op if VAULT_URL not set)
+        builder.Configuration.AddVaultConfiguration();
+
         builder.ConfigureOpenTelemetry();
         builder.AddStructuredLogging();
         builder.AddDefaultHealthChecks();
+
+        // Business metrics singleton (shared across all services)
+        builder.Services.AddSingleton<BusinessMetrics>();
 
         // Ensure OpenTelemetry log provider receives Information+ logs
         // even when Serilog filters are more restrictive on its own pipeline
         builder.Logging.AddFilter<OpenTelemetry.Logs.OpenTelemetryLoggerProvider>(
             null, LogLevel.Information);
 
+        builder.Services.AddSecretProvider(builder.Configuration);
         builder.Services.AddServiceDiscovery();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddTransient<CorrelationIdDelegatingHandler>();
@@ -38,7 +47,26 @@ public static class Extensions
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
             http.AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
-            http.AddStandardResilienceHandler();
+            http.AddStandardResilienceHandler(options =>
+            {
+                // Total request timeout (including all retries)
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+
+                // Retry: exponential backoff with jitter, max 3 attempts
+                options.Retry.MaxRetryAttempts = 3;
+                options.Retry.Delay = TimeSpan.FromMilliseconds(500);
+                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+
+                // Circuit breaker: open after 10% failure rate in 30s window
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+                options.CircuitBreaker.FailureRatio = 0.1;
+                options.CircuitBreaker.MinimumThroughput = 20;
+                options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
+
+                // Per-attempt timeout
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+            });
             http.AddServiceDiscovery();
         });
 
@@ -72,7 +100,8 @@ public static class Extensions
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation()
-                    .AddMeter("MassTransit");
+                    .AddMeter("MassTransit")
+                    .AddMeter(BusinessMetrics.MeterName);
             })
             .WithTracing(tracing =>
             {
@@ -80,7 +109,8 @@ public static class Extensions
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddSource("MassTransit")
-                    .AddSource("Microsoft.EntityFrameworkCore");
+                    .AddSource("Microsoft.EntityFrameworkCore")
+                    .AddSource(DiagnosticConfig.SourceName);
             });
 
         builder.AddOpenTelemetryExporters();
@@ -237,6 +267,18 @@ public static class Extensions
         app.MapHealthChecks("/alive", new HealthCheckOptions
         {
             Predicate = r => r.Tags.Contains("live")
+        });
+
+        app.MapHealthChecks("/ready", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("ready"),
+            ResponseWriter = WriteHealthCheckResponse
+        });
+
+        app.MapHealthChecks("/startup", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("ready"),
+            ResponseWriter = WriteHealthCheckResponse
         });
 
         return app;

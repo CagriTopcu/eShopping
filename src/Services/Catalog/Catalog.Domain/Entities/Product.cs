@@ -15,14 +15,12 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
         ProductName name,
         Money price,
         Category category,
-        StockQuantity stock,
         string? description,
         string? imageUrl) : base(id)
     {
         Name = name;
         Price = price;
         Category = category;
-        Stock = stock;
         Description = description;
         ImageUrl = imageUrl;
         CreatedAt = DateTime.UtcNow;
@@ -33,7 +31,6 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
         ProductName name,
         Money price,
         Category category,
-        StockQuantity stock,
         string? description,
         string? imageUrl,
         DateTime createdAt,
@@ -44,7 +41,6 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
         Name = name;
         Price = price;
         Category = category;
-        Stock = stock;
         Description = description;
         ImageUrl = imageUrl;
         CreatedAt = createdAt;
@@ -59,7 +55,6 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
         decimal price,
         string currency,
         string category,
-        int stock,
         string? description,
         string? imageUrl,
         DateTime createdAt,
@@ -76,15 +71,11 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
         var categoryResult = Category.Create(category);
         if (categoryResult.IsFailure) return categoryResult.Error;
 
-        var stockResult = StockQuantity.Create(stock);
-        if (stockResult.IsFailure) return stockResult.Error;
-
         return new Product(
             ProductId.From(id),
             nameResult.Value,
             priceResult.Value,
             categoryResult.Value,
-            stockResult.Value,
             description,
             imageUrl,
             createdAt,
@@ -96,7 +87,6 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
     public ProductName Name { get; private set; } = null!;
     public Money Price { get; private set; } = null!;
     public Category Category { get; private set; } = null!;
-    public StockQuantity Stock { get; private set; } = null!;
     public string? Description { get; private set; }
     public string? ImageUrl { get; private set; }
     public DateTime CreatedAt { get; private init; }
@@ -109,7 +99,6 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
         decimal price,
         string currency,
         string category,
-        int stock,
         string? description,
         string? imageUrl)
     {
@@ -122,16 +111,12 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
         var categoryResult = Category.Create(category);
         if (categoryResult.IsFailure) return categoryResult.Error;
 
-        var stockResult = StockQuantity.Create(stock);
-        if (stockResult.IsFailure) return stockResult.Error;
-
         var id = ProductId.New();
         var product = new Product(
             id,
             nameResult.Value,
             priceResult.Value,
             categoryResult.Value,
-            stockResult.Value,
             description,
             imageUrl);
 
@@ -172,20 +157,6 @@ public sealed class Product : AggregateRoot<ProductId>, IAuditableEntity, ISoftD
             Price = priceResult.Value;
             RaiseDomainEvent(new ProductPriceChangedDomainEvent(Id, oldPrice, priceResult.Value));
         }
-
-        return Result.Success();
-    }
-
-    public Result AdjustStock(int delta)
-    {
-        var newQuantity = Stock.Value + delta;
-        var stockResult = StockQuantity.Create(newQuantity);
-        if (stockResult.IsFailure) return ProductErrors.InsufficientStock;
-
-        Stock = stockResult.Value;
-        UpdatedAt = DateTime.UtcNow;
-
-        RaiseDomainEvent(new StockAdjustedDomainEvent(Id, delta, Stock.Value));
 
         return Result.Success();
     }

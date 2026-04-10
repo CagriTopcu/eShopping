@@ -14,16 +14,14 @@ public static class MappingConfig
             .Map(dest => dest.Name, src => src.Name.Value)
             .Map(dest => dest.Category, src => src.Category.Name)
             .Map(dest => dest.Price, src => src.Price.Amount)
-            .Map(dest => dest.Currency, src => src.Price.Currency)
-            .Map(dest => dest.Stock, src => src.Stock.Value);
+            .Map(dest => dest.Currency, src => src.Price.Currency);
 
         TypeAdapterConfig<Product, ProductResponse>.NewConfig()
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.Name, src => src.Name.Value)
             .Map(dest => dest.Category, src => src.Category.Name)
             .Map(dest => dest.Price, src => src.Price.Amount)
-            .Map(dest => dest.Currency, src => src.Price.Currency)
-            .Map(dest => dest.Stock, src => src.Stock.Value);
+            .Map(dest => dest.Currency, src => src.Price.Currency);
 
         TypeAdapterConfig<ProductReadModel, ProductResponse>.NewConfig();
     }

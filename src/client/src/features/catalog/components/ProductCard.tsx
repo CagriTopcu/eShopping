@@ -72,17 +72,8 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
-        {/* Stock indicator */}
-        {product.stock <= 0 && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-xs font-semibold">
-              Tükendi
-            </span>
-          </div>
-        )}
-
         {/* Add to basket - hover overlay */}
-        {isAuthenticated && product.stock > 0 && (
+        {isAuthenticated && (
           <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
             <Button
               size="sm"
@@ -108,23 +99,12 @@ export function ProductCard({ product }: ProductCardProps) {
           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
             {product.category}
           </Badge>
-          {product.stock > 0 && product.stock <= 5 && (
-            <span className="text-[10px] text-warning font-medium">
-              Son {product.stock} adet
-            </span>
-          )}
         </div>
 
         <div className="mt-3 flex items-center justify-between">
           <p className="text-lg font-bold text-primary">
             {formatCurrency(product.price, product.currency)}
           </p>
-          {product.stock > 0 && (
-            <div className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-success" />
-              <span className="text-xs text-muted-foreground">Stokta</span>
-            </div>
-          )}
         </div>
       </div>
     </Link>

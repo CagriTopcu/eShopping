@@ -29,7 +29,7 @@ internal static class CreateProductEndpoint
             request.Category,
             request.Price,
             request.Currency,
-            request.Stock,
+            request.InitialStock,
             request.Description,
             request.ImageUrl);
 

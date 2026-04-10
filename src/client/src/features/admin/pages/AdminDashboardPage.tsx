@@ -41,11 +41,6 @@ function AdminDashboardContent() {
           value={catalogStats?.totalProducts ?? "—"}
         />
         <StatCard
-          label="Dusuk Stok Uyarisi"
-          value={catalogStats?.lowStockCount ?? "—"}
-          alert={(catalogStats?.lowStockCount ?? 0) > 0}
-        />
-        <StatCard
           label="Kategoriler"
           value={catalogStats?.categories.length ?? "—"}
         />
@@ -124,8 +119,7 @@ function AdminDashboardContent() {
           </Link>
 
           <Link
-            to="/admin/products/$productId/edit"
-            params={{ productId: "new" }}
+            to="/admin/stock"
             className="group p-6 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all"
           >
             <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center mb-3 group-hover:bg-success/20 transition-colors">
@@ -139,13 +133,41 @@ function AdminDashboardContent() {
                 strokeWidth="2"
                 className="text-success"
               >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.29 7 12 12 20.71 7" />
+                <line x1="12" y1="22" x2="12" y2="12" />
               </svg>
             </div>
-            <h3 className="font-semibold">Yeni Urun Ekle</h3>
+            <h3 className="font-semibold">Stok Yonetimi</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Kataloga yeni urun ekleyin
+              Stok seviyelerini goruntuleyin ve duzenleyin
+            </p>
+          </Link>
+
+          <Link
+            to="/admin/shipping"
+            className="group p-6 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all"
+          >
+            <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3 group-hover:bg-blue-500/20 transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-blue-500"
+              >
+                <rect x="1" y="3" width="15" height="13" />
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                <circle cx="5.5" cy="18.5" r="2.5" />
+                <circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>
+            </div>
+            <h3 className="font-semibold">Kargo Yonetimi</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Kargo durumlarini takip edin ve guncelleyin
             </p>
           </Link>
         </div>

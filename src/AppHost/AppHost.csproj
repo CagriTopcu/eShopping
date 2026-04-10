@@ -21,6 +21,8 @@
     <ProjectReference Include="..\Services\Order\Order.API\Order.API.csproj" />
     <ProjectReference Include="..\Services\Payment\Payment.API\Payment.API.csproj" />
     <ProjectReference Include="..\Services\Notification\Notification.Worker\Notification.Worker.csproj" />
+    <ProjectReference Include="..\Services\UserProfile\UserProfile.API\UserProfile.API.csproj" />
+    <ProjectReference Include="..\Services\Shipping\Shipping.API\Shipping.API.csproj" />
     <ProjectReference Include="..\Gateways\Gateway.API\Gateway.API.csproj" />
   </ItemGroup>
 </Project>

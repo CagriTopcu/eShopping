@@ -1,0 +1,128 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "title": "Stock Reservations (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(eshopping_stock_reservations_failed_total[5m])) by (reason)",
+          "legendFormat": "failed: {{reason}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "title": "Stock Reservation Duration (p95/p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(eshopping_stock_reservation_duration_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(eshopping_stock_reservation_duration_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms" }
+      }
+    },
+    {
+      "title": "Low Stock Warnings (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(eshopping_stock_low_warnings_total[5m]))",
+          "legendFormat": "low stock warnings/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "color": { "mode": "fixed", "fixedColor": "orange" } }
+      }
+    },
+    {
+      "title": "Low Stock Warnings (total by product)",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (product_id) (eshopping_stock_low_warnings_total))",
+          "legendFormat": "{{product_id}}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value" },
+            "properties": [{ "id": "displayName", "value": "Warnings" }]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Stock Reservation Failure Rate",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(eshopping_stock_reservations_failed_total[1h])) / clamp_min(sum(rate(eshopping_orders_placed_total[1h])), 1)",
+          "legendFormat": "failure rate"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.05 },
+              { "color": "red", "value": 0.1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "MassTransit Consumer Duration (Stock)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(masstransit_receive_duration_seconds_bucket{service_name=~\".*stock.*\"}[5m])) by (le, message_type))",
+          "legendFormat": "p95 {{message_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["eshopping", "stock", "inventory"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "eShopping - Stock Health",
+  "uid": "eshopping-stock-health"
+}

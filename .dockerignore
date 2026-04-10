@@ -1,0 +1,15 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/.env.local
+**/TestResults
+**/*.user
+**/*.suo
+deploy/
+tests/
+*.md
+!src/AppHost/keycloak/README.md
+.github/

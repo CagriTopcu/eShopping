@@ -5,12 +5,15 @@ import { z } from "zod";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute.tsx";
 import { useBasket } from "@/features/basket/api/basket.queries.ts";
+import { useProfile } from "@/features/profile/api/profile.queries.ts";
 import { usePlaceOrder } from "../api/order.mutations.ts";
 import { Button } from "@/shared/components/ui/Button.tsx";
 import { Input } from "@/shared/components/ui/Input.tsx";
 import { Textarea } from "@/shared/components/ui/Textarea.tsx";
+import { Badge } from "@/shared/components/ui/Badge.tsx";
 import { EmptyState } from "@/shared/components/ui/EmptyState.tsx";
 import { formatCurrency } from "@/shared/lib/format.ts";
+import type { AddressResponse } from "@/shared/types/common.types.ts";
 
 const addressSchema = z.object({
   street: z.string().min(1, "Adres zorunludur"),
@@ -54,12 +57,20 @@ function formatCardNumber(value: string): string {
   return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
 }
 
+type AddressMode = "select" | "new";
+
 function CheckoutContent() {
   const { data: basket } = useBasket();
+  const { data: profile } = useProfile();
   const placeOrder = usePlaceOrder();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("address");
   const [addressData, setAddressData] = useState<AddressFormData | null>(null);
+  const [addressMode, setAddressMode] = useState<AddressMode>("select");
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+
+  const savedAddresses = profile?.addresses ?? [];
+  const hasAddresses = savedAddresses.length > 0;
 
   const addressForm = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema) as never,
@@ -80,6 +91,23 @@ function CheckoutContent() {
   const onAddressSubmit = (data: AddressFormData) => {
     setAddressData(data);
     setStep("payment");
+  };
+
+  const onSelectSavedAddress = (address: AddressResponse) => {
+    setSelectedAddressId(address.id);
+    setAddressData({
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      country: address.country,
+      zipCode: address.zipCode,
+    });
+  };
+
+  const onContinueWithSelected = () => {
+    if (addressData) {
+      setStep("payment");
+    }
   };
 
   const onPaymentSubmit = () => {
@@ -163,76 +191,175 @@ function CheckoutContent() {
         <div className="lg:col-span-2 space-y-6">
           {/* Address Step */}
           {step === "address" && (
-            <form
-              onSubmit={addressForm.handleSubmit(onAddressSubmit)}
-              className="space-y-6"
-            >
-              <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-                <h2 className="text-lg font-semibold">Teslimat Adresi</h2>
-
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Adres
-                  </label>
-                  <Textarea
-                    {...addressForm.register("street")}
-                    placeholder="Mahalle, sokak, bina no, daire no..."
-                    error={addressForm.formState.errors.street?.message}
-                    rows={3}
-                  />
+            <div className="space-y-6">
+              {/* Mode toggle - only show if user has saved addresses */}
+              {hasAddresses && (
+                <div className="flex gap-2 p-1 rounded-lg bg-muted/50 w-fit">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddressMode("select");
+                      setSelectedAddressId(null);
+                      setAddressData(null);
+                    }}
+                    className={`px-4 py-2 text-sm rounded-md transition-all ${
+                      addressMode === "select"
+                        ? "bg-card shadow-sm font-medium text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Kayıtlı Adreslerim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddressMode("new");
+                      setSelectedAddressId(null);
+                      setAddressData(null);
+                    }}
+                    className={`px-4 py-2 text-sm rounded-md transition-all ${
+                      addressMode === "new"
+                        ? "bg-card shadow-sm font-medium text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Yeni Adres Gir
+                  </button>
                 </div>
+              )}
 
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">
-                      Şehir
-                    </label>
-                    <Input
-                      {...addressForm.register("city")}
-                      placeholder="İstanbul"
-                      error={addressForm.formState.errors.city?.message}
-                    />
+              {/* Saved addresses selection */}
+              {hasAddresses && addressMode === "select" && (
+                <div className="space-y-6">
+                  <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+                    <h2 className="text-lg font-semibold">Teslimat Adresi Seçin</h2>
+                    <div className="grid gap-3">
+                      {savedAddresses.map((address) => (
+                        <button
+                          key={address.id}
+                          type="button"
+                          onClick={() => onSelectSavedAddress(address)}
+                          className={`text-left w-full p-4 rounded-lg border-2 transition-all ${
+                            selectedAddressId === address.id
+                              ? "border-primary bg-primary/5 shadow-sm"
+                              : "border-border hover:border-primary/30 hover:bg-muted/30"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{address.label}</span>
+                              {address.isDefault && (
+                                <Badge variant="success" className="text-[10px]">Varsayılan</Badge>
+                              )}
+                            </div>
+                            <div
+                              className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                selectedAddressId === address.id
+                                  ? "border-primary"
+                                  : "border-muted-foreground/30"
+                              }`}
+                            >
+                              {selectedAddressId === address.id && (
+                                <div className="h-2.5 w-2.5 rounded-full bg-primary" />
+                              )}
+                            </div>
+                          </div>
+                          <address className="text-sm text-muted-foreground not-italic leading-relaxed">
+                            {address.street}<br />
+                            {address.city}, {address.state} {address.zipCode}<br />
+                            {address.country}
+                          </address>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">
-                      İlçe/Bölge
-                    </label>
-                    <Input
-                      {...addressForm.register("state")}
-                      placeholder="Kadıköy"
-                      error={addressForm.formState.errors.state?.message}
-                    />
-                  </div>
+
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="w-full shadow-md"
+                    disabled={!selectedAddressId}
+                    onClick={onContinueWithSelected}
+                  >
+                    Ödeme Adımına Geç
+                  </Button>
                 </div>
+              )}
 
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">
-                      Posta Kodu
-                    </label>
-                    <Input
-                      {...addressForm.register("zipCode")}
-                      placeholder="34000"
-                      error={addressForm.formState.errors.zipCode?.message}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">
-                      Ülke
-                    </label>
-                    <Input
-                      {...addressForm.register("country")}
-                      placeholder="Türkiye"
-                      error={addressForm.formState.errors.country?.message}
-                    />
-                  </div>
-                </div>
-              </div>
+              {/* New address form */}
+              {(addressMode === "new" || !hasAddresses) && (
+                <form
+                  onSubmit={addressForm.handleSubmit(onAddressSubmit)}
+                  className="space-y-6"
+                >
+                  <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+                    <h2 className="text-lg font-semibold">Teslimat Adresi</h2>
 
-              <Button type="submit" size="lg" className="w-full shadow-md">
-                Ödeme Adımına Geç
-              </Button>
-            </form>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">
+                        Adres
+                      </label>
+                      <Textarea
+                        {...addressForm.register("street")}
+                        placeholder="Mahalle, sokak, bina no, daire no..."
+                        error={addressForm.formState.errors.street?.message}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">
+                          Şehir
+                        </label>
+                        <Input
+                          {...addressForm.register("city")}
+                          placeholder="İstanbul"
+                          error={addressForm.formState.errors.city?.message}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">
+                          İlçe/Bölge
+                        </label>
+                        <Input
+                          {...addressForm.register("state")}
+                          placeholder="Kadıköy"
+                          error={addressForm.formState.errors.state?.message}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">
+                          Posta Kodu
+                        </label>
+                        <Input
+                          {...addressForm.register("zipCode")}
+                          placeholder="34000"
+                          error={addressForm.formState.errors.zipCode?.message}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">
+                          Ülke
+                        </label>
+                        <Input
+                          {...addressForm.register("country")}
+                          placeholder="Türkiye"
+                          error={addressForm.formState.errors.country?.message}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button type="submit" size="lg" className="w-full shadow-md">
+                    Ödeme Adımına Geç
+                  </Button>
+                </form>
+              )}
+            </div>
           )}
 
           {/* Payment Step */}

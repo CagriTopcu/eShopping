@@ -4,6 +4,7 @@ import { ROLES, ORDER_STATUS } from "@/config/constants.ts";
 import { useAdminOrderDetail } from "../api/admin.queries.ts";
 import { useAdminCancelOrder } from "../api/admin.mutations.ts";
 import { OrderStatusBadge } from "@/features/order/components/OrderStatusBadge.tsx";
+import { ShipmentTracker } from "@/features/shipping/components/ShipmentTracker.tsx";
 import { Button } from "@/shared/components/ui/Button.tsx";
 import { Skeleton } from "@/shared/components/ui/Skeleton.tsx";
 import { formatCurrency, formatDate } from "@/shared/lib/format.ts";
@@ -120,6 +121,11 @@ function AdminOrderDetailContent() {
               {order.shippingCountry}
             </address>
           </div>
+
+          {(order.status === ORDER_STATUS.Completed ||
+            order.status === ORDER_STATUS.PaymentReserved) && (
+            <ShipmentTracker orderId={order.id} />
+          )}
         </div>
       </div>
     </div>

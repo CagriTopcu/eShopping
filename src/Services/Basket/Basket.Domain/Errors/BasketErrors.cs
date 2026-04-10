@@ -16,14 +16,6 @@ public static class BasketErrors
     public static readonly Error ProductNotFound =
         Error.NotFound("Basket.ProductNotFound", "Product does not exist in the catalog.");
 
-    public static readonly Error CatalogUnavailable =
-        Error.Failure("Basket.CatalogUnavailable",
-            "Unable to validate product — catalog service is unreachable.");
-
-    public static readonly Error StockUnavailable =
-        Error.Failure("Basket.StockUnavailable",
-            "Unable to validate stock — stock service is unreachable.");
-
     public static readonly Error OutOfStock =
         Error.Validation("Basket.OutOfStock", "This product is currently out of stock.");
 

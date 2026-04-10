@@ -27,11 +27,15 @@ export interface ProductResponse {
   category: string;
   price: number;
   currency: string;
-  stock: number;
   description?: string;
   imageUrl?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface StockResponse {
+  productId: string;
+  availableQuantity: number;
 }
 
 export interface BasketResponse {
@@ -77,7 +81,7 @@ export interface CreateProductRequest {
   category: string;
   price: number;
   currency: string;
-  stock: number;
+  initialStock: number;
   description?: string;
   imageUrl?: string;
 }
@@ -114,7 +118,6 @@ export interface OrderItemRequest {
 
 export interface CatalogStatsResponse {
   totalProducts: number;
-  lowStockCount: number;
   categories: string[];
 }
 
@@ -133,4 +136,64 @@ export interface ProductFilters {
   maxPrice?: number;
   page?: number;
   pageSize?: number;
+}
+
+// ── Profile ──────────────────────────────────────────────
+
+export interface ProfileResponse {
+  id: string;
+  keycloakUserId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber?: string;
+  addresses: AddressResponse[];
+}
+
+export interface AddressResponse {
+  id: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  label: string;
+  isDefault: boolean;
+}
+
+export interface CreateProfileRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber?: string;
+}
+
+export interface UpdateProfileRequest {
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+}
+
+export interface AddAddressRequest {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  label: string;
+  isDefault?: boolean;
+}
+
+// ── Shipping ─────────────────────────────────────────────
+
+export interface ShipmentResponse {
+  id: string;
+  orderId: string;
+  customerId: string;
+  orderTotal: number;
+  status: number;
+  trackingNumber?: string;
+  createdAt: string;
+  shippedAt?: string;
+  deliveredAt?: string;
 }

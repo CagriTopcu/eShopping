@@ -6,7 +6,6 @@ namespace Catalog.Application.DTOs;
 /// <param name="Category">Product category (e.g., Electronics, Clothing).</param>
 /// <param name="Price">Unit price in the specified currency.</param>
 /// <param name="Currency">ISO 4217 currency code (e.g., USD, EUR, TRY).</param>
-/// <param name="Stock">Current available stock quantity.</param>
 /// <param name="Description">Optional detailed product description.</param>
 /// <param name="ImageUrl">Optional URL to the product image.</param>
 /// <param name="CreatedAt">Timestamp when the product was created (UTC).</param>
@@ -17,7 +16,6 @@ public sealed record ProductResponse(
     string Category,
     decimal Price,
     string Currency,
-    int Stock,
     string? Description,
     string? ImageUrl,
     DateTime CreatedAt,

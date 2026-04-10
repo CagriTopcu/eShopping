@@ -43,20 +43,19 @@ function AdminProductsContent() {
                 <th className="text-left p-4 font-medium">Ürün</th>
                 <th className="text-left p-4 font-medium">Kategori</th>
                 <th className="text-right p-4 font-medium">Fiyat</th>
-                <th className="text-right p-4 font-medium">Stok</th>
                 <th className="text-right p-4 font-medium">İşlemler</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={4} className="p-8 text-center text-muted-foreground">
                     Yükleniyor...
                   </td>
                 </tr>
               ) : !data?.items.length ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={4} className="p-8 text-center text-muted-foreground">
                     Ürün bulunamadı
                   </td>
                 </tr>
@@ -77,17 +76,6 @@ function AdminProductsContent() {
                     </td>
                     <td className="p-4 text-right">
                       {formatCurrency(product.price, product.currency)}
-                    </td>
-                    <td className="p-4 text-right">
-                      <span
-                        className={
-                          product.stock > 0
-                            ? "text-success"
-                            : "text-destructive"
-                        }
-                      >
-                        {product.stock}
-                      </span>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">

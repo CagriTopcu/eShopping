@@ -10,5 +10,7 @@ public sealed class OrderSagaState : SagaStateMachineInstance
     public decimal TotalAmount { get; set; }
     public string ItemsJson { get; set; } = "[]";
     public bool PaymentSucceeded { get; set; }
+    public Guid? PaymentId { get; set; }
+    public string? TransactionId { get; set; }
     public string? FailureReason { get; set; }
 }

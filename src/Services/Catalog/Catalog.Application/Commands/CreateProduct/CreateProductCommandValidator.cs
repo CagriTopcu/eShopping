@@ -10,6 +10,6 @@ internal sealed class CreateProductCommandValidator : AbstractValidator<CreatePr
         RuleFor(x => x.Category).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Price).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Currency).NotEmpty().Length(3);
-        RuleFor(x => x.Stock).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.InitialStock).GreaterThanOrEqualTo(0);
     }
 }

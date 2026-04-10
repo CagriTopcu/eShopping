@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Stock.Application\Stock.Application.csproj" />
+    <ProjectReference Include="..\..\..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

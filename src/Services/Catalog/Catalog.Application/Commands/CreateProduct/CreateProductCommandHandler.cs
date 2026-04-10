@@ -28,7 +28,6 @@ internal sealed class CreateProductCommandHandler(
             request.Price,
             request.Currency,
             request.Category,
-            request.Stock,
             request.Description,
             request.ImageUrl);
 
@@ -52,13 +51,13 @@ internal sealed class CreateProductCommandHandler(
                 product.Category.Name,
                 product.Price.Amount,
                 product.Price.Currency,
-                product.Stock.Value),
+                request.InitialStock),
             cancellationToken);
 
         logger.LogInformation(
-            "Product {ProductId} created: {Name}, category {Category}, price {Price} {Currency}, initial stock {Stock}",
+            "Product {ProductId} created: {Name}, category {Category}, price {Price} {Currency}, initial stock {InitialStock}",
             product.Id.Value, product.Name.Value, product.Category.Name,
-            product.Price.Amount, product.Price.Currency, product.Stock.Value);
+            product.Price.Amount, product.Price.Currency, request.InitialStock);
 
         return product.Id.Value;
     }

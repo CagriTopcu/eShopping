@@ -12,4 +12,5 @@ public abstract record IntegrationEvent : IIntegrationEvent
     public Guid Id { get; init; }
     public DateTime OccurredOn { get; init; }
     public string EventType { get; init; }
+    public int Version { get; init; } = 1;
 }

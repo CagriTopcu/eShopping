@@ -12,6 +12,7 @@
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="Mapster" Version="7.4.0" />
+    <PackageReference Include="MassTransit.Abstractions" Version="8.3.6" />
     <PackageReference Include="MediatR" Version="14.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
   </ItemGroup>
@@ -19,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Payment.Domain\Payment.Domain.csproj" />
     <ProjectReference Include="..\..\..\Shared\Shared.BuildingBlocks\Shared.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Shared.Contracts\Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

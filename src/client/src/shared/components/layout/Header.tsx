@@ -54,12 +54,20 @@ export function Header() {
                   Ürünler
                 </Link>
                 {isAuthenticated && (
-                  <Link
-                    to="/orders"
-                    className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors [&.active]:text-foreground [&.active]:bg-accent"
-                  >
-                    Siparişlerim
-                  </Link>
+                  <>
+                    <Link
+                      to="/orders"
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors [&.active]:text-foreground [&.active]:bg-accent"
+                    >
+                      Siparislerim
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors [&.active]:text-foreground [&.active]:bg-accent"
+                    >
+                      Profilim
+                    </Link>
+                  </>
                 )}
               </nav>
             </div>

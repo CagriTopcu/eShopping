@@ -5,9 +5,10 @@ using Microsoft.Extensions.Hosting;
 using Order.Application.Abstractions;
 using Order.Application.Sagas;
 using Order.Application.Sagas.Activities;
-using Order.Infrastructure.Messaging;
+using Order.Infrastructure.HealthChecks;
 using Order.Infrastructure.Persistence;
 using Order.Infrastructure.Persistence.Repositories;
+using ServiceDefaults.CorrelationId;
 
 namespace Order.Infrastructure;
 
@@ -20,13 +21,11 @@ public static class DependencyInjection
         builder.Services.AddScoped<IOrderRepository, OrderRepository>();
         builder.Services.AddHostedService<OrderDbInitializer>();
 
-        builder.Services.AddHttpClient<IPaymentClient, PaymentClient>(client =>
-        {
-            client.BaseAddress = new Uri("http://payment-api");
-        });
-
-        builder.Services.AddScoped<ProcessPaymentActivity>();
+        builder.Services.AddScoped<ConfirmOrderActivity>();
         builder.Services.AddScoped<CancelOrderActivity>();
+
+        builder.Services.AddHealthChecks()
+            .AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
 
         builder.Services.AddMassTransit(x =>
         {
@@ -47,6 +46,9 @@ public static class DependencyInjection
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 cfg.Host(builder.Configuration.GetConnectionString("rabbitmq"));
+                cfg.UseMessageRetry(r => r.Intervals(500, 1000, 2000, 5000));
+                cfg.UsePublishFilter(typeof(CorrelationIdPublishFilter<>), ctx);
+                cfg.UseConsumeFilter(typeof(CorrelationIdConsumeFilter<>), ctx);
                 cfg.ConfigureEndpoints(ctx);
             });
         });

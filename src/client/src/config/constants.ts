@@ -27,3 +27,21 @@ export const CACHE_TIMES = {
 } as const;
 
 export const POLLING_INTERVAL = 10_000;
+
+export const SHIPMENT_STATUS = {
+  Created: 0,
+  Processing: 1,
+  Shipped: 2,
+  InTransit: 3,
+  Delivered: 4,
+  Failed: 5,
+} as const;
+
+export const SHIPMENT_STATUS_LABELS: Record<number, string> = {
+  [SHIPMENT_STATUS.Created]: "Olusturuldu",
+  [SHIPMENT_STATUS.Processing]: "Hazirlaniyor",
+  [SHIPMENT_STATUS.Shipped]: "Kargoya Verildi",
+  [SHIPMENT_STATUS.InTransit]: "Yolda",
+  [SHIPMENT_STATUS.Delivered]: "Teslim Edildi",
+  [SHIPMENT_STATUS.Failed]: "Basarisiz",
+};

@@ -3,6 +3,7 @@ import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute.tsx";
 import { useOrder } from "../api/order.queries.ts";
 import { useCancelOrder } from "../api/order.mutations.ts";
 import { OrderStatusBadge } from "../components/OrderStatusBadge.tsx";
+import { ShipmentTracker } from "@/features/shipping/components/ShipmentTracker.tsx";
 import { Button } from "@/shared/components/ui/Button.tsx";
 import { Skeleton } from "@/shared/components/ui/Skeleton.tsx";
 import { formatCurrency, formatDate } from "@/shared/lib/format.ts";
@@ -131,6 +132,11 @@ function OrderDetailContent() {
 
         {/* Sidebar */}
         <div className="space-y-4">
+          {/* Shipping tracker */}
+          {(order.status === ORDER_STATUS.Completed || order.status === ORDER_STATUS.PaymentReserved) && (
+            <ShipmentTracker orderId={order.id} />
+          )}
+
           <div className="rounded-xl border border-border bg-card p-5">
             <h2 className="font-semibold mb-3">Teslimat Adresi</h2>
             <address className="text-sm text-muted-foreground not-italic leading-relaxed">

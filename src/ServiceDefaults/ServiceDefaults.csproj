@@ -21,5 +21,9 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.*" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*" />
+    <PackageReference Include="VaultSharp" Version="1.17.5.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Shared.BuildingBlocks\Shared.BuildingBlocks.csproj" />
   </ItemGroup>
 </Project>

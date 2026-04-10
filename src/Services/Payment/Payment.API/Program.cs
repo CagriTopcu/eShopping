@@ -14,6 +14,9 @@ builder.Services.AddServiceOpenApi(
     "Payment API",
     "Payment processing service. Handles payment reservations, captures, and refunds for order processing.");
 builder.Services.AddServiceApiVersioning();
+builder.Services.AddServiceAuthentication();
+builder.Services.AddAuthorizationPolicies();
+builder.Services.AddCurrentUser();
 
 builder.Services.AddApplication();
 builder.AddInfrastructure();
@@ -26,8 +29,12 @@ app.MapScalarApiReference(options =>
     options.Title = "Payment API";
     options.Theme = ScalarTheme.BluePlanet;
     options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    options.AddPreferredSecuritySchemes("Bearer");
 });
 app.MapDefaultEndpoints();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 var paymentVersionSet = app.NewApiVersionSet()
     .HasApiVersion(new ApiVersion(1, 0))
@@ -38,6 +45,7 @@ app.MapGroup("/api/v{version:apiVersion}/payments")
     .WithApiVersionSet(paymentVersionSet)
     .MapToApiVersion(new ApiVersion(1, 0))
     .WithTags("Payment")
+    .RequireAuthorization()
     .MapPaymentEndpoints();
 
 app.Run();

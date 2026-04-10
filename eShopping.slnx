@@ -43,8 +43,19 @@
     <Project Path="src/Services/Payment/Payment.Infrastructure/Payment.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Services/Notification/">
-    <Project Path="src/Services/Notification/Notification.Grpc/Notification.Grpc.csproj" />
     <Project Path="src/Services/Notification/Notification.Worker/Notification.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/UserProfile/">
+    <Project Path="src/Services/UserProfile/UserProfile.API/UserProfile.API.csproj" />
+    <Project Path="src/Services/UserProfile/UserProfile.Application/UserProfile.Application.csproj" />
+    <Project Path="src/Services/UserProfile/UserProfile.Domain/UserProfile.Domain.csproj" />
+    <Project Path="src/Services/UserProfile/UserProfile.Infrastructure/UserProfile.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Shipping/">
+    <Project Path="src/Services/Shipping/Shipping.API/Shipping.API.csproj" />
+    <Project Path="src/Services/Shipping/Shipping.Application/Shipping.Application.csproj" />
+    <Project Path="src/Services/Shipping/Shipping.Domain/Shipping.Domain.csproj" />
+    <Project Path="src/Services/Shipping/Shipping.Infrastructure/Shipping.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Gateways/">
     <Project Path="src/Gateways/Gateway.API/Gateway.API.csproj" />
@@ -53,14 +64,19 @@
     <Project Path="tests/Unit/Basket.Domain.Tests/Basket.Domain.Tests.csproj" />
     <Project Path="tests/Unit/Catalog.Domain.Tests/Catalog.Domain.Tests.csproj" />
     <Project Path="tests/Unit/Order.Domain.Tests/Order.Domain.Tests.csproj" />
+    <Project Path="tests/Unit/Order.Saga.Tests/Order.Saga.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Integration/">
     <Project Path="tests/Integration/Basket.Integration.Tests/Basket.Integration.Tests.csproj" />
     <Project Path="tests/Integration/Catalog.Integration.Tests/Catalog.Integration.Tests.csproj" />
+    <Project Path="tests/Integration/Gateway.Integration.Tests/Gateway.Integration.Tests.csproj" />
     <Project Path="tests/Integration/Order.Integration.Tests/Order.Integration.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/Contract/">
     <Project Path="tests/Contract/Pact.Tests/Pact.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Architecture/">
+    <Project Path="tests/Architecture/Architecture.Tests/Architecture.Tests.csproj" />
   </Folder>
 </Solution>

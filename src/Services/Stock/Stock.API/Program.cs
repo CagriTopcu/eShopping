@@ -12,6 +12,9 @@ builder.Services.AddServiceOpenApi(
     "Stock API",
     "Stock management service. Tracks product inventory levels. Internal service consumed by catalog and order services for stock operations.");
 builder.Services.AddServiceApiVersioning();
+builder.Services.AddServiceAuthentication();
+builder.Services.AddAuthorizationPolicies();
+builder.Services.AddCurrentUser();
 builder.Services.AddApplication();
 builder.AddInfrastructure();
 
@@ -23,8 +26,12 @@ app.MapScalarApiReference(options =>
     options.Title = "Stock API";
     options.Theme = ScalarTheme.BluePlanet;
     options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    options.AddPreferredSecuritySchemes("Bearer");
 });
 app.MapDefaultEndpoints();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 var stockVersionSet = app.NewApiVersionSet()
     .HasApiVersion(new ApiVersion(1, 0))
@@ -35,6 +42,7 @@ app.MapGroup("/api/v{version:apiVersion}/stock")
     .WithApiVersionSet(stockVersionSet)
     .MapToApiVersion(new ApiVersion(1, 0))
     .WithTags("Stock")
+    .RequireAuthorization()
     .MapStockEndpoints();
 
 app.Run();

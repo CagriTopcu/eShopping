@@ -1,0 +1,109 @@
+groups:
+  - name: eshopping-saga
+    rules:
+      - alert: SagaStuckInProgress
+        expr: |
+          (time() - masstransit_saga_duration_seconds_sum / clamp_min(masstransit_saga_duration_seconds_count, 1)) > 300
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Order saga stuck for >5 minutes"
+          description: "A saga instance has been in-progress for more than 5 minutes, indicating a stuck state machine."
+
+  - name: eshopping-payments
+    rules:
+      - alert: PaymentFailureRateHigh
+        expr: |
+          sum(rate(eshopping_payments_failed_total[5m]))
+          / clamp_min(sum(rate(eshopping_orders_placed_total[5m])), 0.001) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Payment failure rate exceeds 10%"
+          description: "More than 10% of orders are failing at the payment stage over the last 5 minutes."
+
+      - alert: PaymentProcessingSlow
+        expr: |
+          histogram_quantile(0.99, sum(rate(eshopping_payments_processing_duration_bucket[5m])) by (le)) > 5000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Payment processing p99 latency exceeds 5s"
+          description: "Payment gateway response times are degraded."
+
+  - name: eshopping-stock
+    rules:
+      - alert: StockReservationFailureHigh
+        expr: |
+          sum(rate(eshopping_stock_reservations_failed_total[5m]))
+          / clamp_min(sum(rate(eshopping_orders_placed_total[5m])), 0.001) > 0.15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stock reservation failure rate exceeds 15%"
+          description: "A high percentage of orders are failing at stock reservation."
+
+      - alert: LowStockWarningSpike
+        expr: sum(rate(eshopping_stock_low_warnings_total[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sustained low stock warnings"
+          description: "Multiple products are hitting low stock thresholds."
+
+  - name: eshopping-api
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~"5.."}[5m])) by (job)
+          / clamp_min(sum(rate(http_server_request_duration_seconds_count[5m])) by (job), 0.001) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "5xx error rate exceeds 5% on {{ $labels.job }}"
+          description: "Service {{ $labels.job }} is returning more than 5% server errors."
+
+      - alert: HighP99Latency
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le, job)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 latency exceeds 2s on {{ $labels.job }}"
+          description: "Service {{ $labels.job }} p99 response time is above 2 seconds."
+
+  - name: eshopping-infrastructure
+    rules:
+      - alert: ServiceUnhealthy
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been unreachable for more than 2 minutes."
+
+      - alert: HighExceptionRate
+        expr: sum(rate(dotnet_exceptions_total[5m])) by (job) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High exception rate on {{ $labels.job }}"
+          description: "Service {{ $labels.job }} is throwing more than 10 exceptions per second."
+
+      - alert: MassTransitDLQDepth
+        expr: sum(masstransit_receive_fault_total) by (service_name) > 100
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DLQ depth exceeds 100 on {{ $labels.service_name }}"
+          description: "MassTransit error queue has accumulated more than 100 faulted messages."

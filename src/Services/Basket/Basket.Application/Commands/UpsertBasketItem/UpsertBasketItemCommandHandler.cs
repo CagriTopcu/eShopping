@@ -10,8 +10,7 @@ namespace Basket.Application.Commands.UpsertBasketItem;
 
 internal sealed class UpsertBasketItemCommandHandler(
     IBasketRepository basketRepository,
-    ICatalogClient catalogClient,
-    IStockClient stockClient,
+    IProductSnapshotCache productSnapshotCache,
     ILogger<UpsertBasketItemCommandHandler> logger)
     : ICommandHandler<UpsertBasketItemCommand, BasketResponse>
 {
@@ -19,32 +18,15 @@ internal sealed class UpsertBasketItemCommandHandler(
         UpsertBasketItemCommand request,
         CancellationToken cancellationToken)
     {
-        // 1. Resolve product metadata from Catalog (name, price, currency).
-        ProductSnapshot? snapshot;
-        try
-        {
-            snapshot = await catalogClient.GetProductSnapshotAsync(request.ProductId, cancellationToken);
-        }
-        catch (CatalogServiceUnavailableException)
-        {
-            return BasketErrors.CatalogUnavailable;
-        }
+        // 1. Resolve product metadata from event-driven Redis cache (no sync HTTP).
+        var snapshot = await productSnapshotCache.GetAsync(request.ProductId, cancellationToken);
 
         if (snapshot is null)
             return BasketErrors.ProductNotFound;
 
-        // 2. Query stock availability from StockService (soft check).
-        //    null means no stock record exists → treated as unconstrained (permissive).
-        //    Hard reservation happens in the Order saga at checkout.
-        StockInfo? stockInfo;
-        try
-        {
-            stockInfo = await stockClient.GetStockAsync(request.ProductId, cancellationToken);
-        }
-        catch (StockServiceUnavailableException)
-        {
-            return BasketErrors.StockUnavailable;
-        }
+        // 2. Stock check is fully optimistic — hard reservation happens in the Order saga.
+        //    The cache contains product metadata only (name, price, currency).
+        //    No sync call to Stock service required.
 
         var basket = await basketRepository.GetAsync(request.Username, cancellationToken)
             ?? Basket.Domain.Entities.Basket.Create(request.Username);
@@ -55,7 +37,7 @@ internal sealed class UpsertBasketItemCommandHandler(
             snapshot.Price,
             snapshot.Currency,
             request.Quantity,
-            stockInfo?.AvailableQuantity);
+            availableStock: null); // Optimistic: stock validated at checkout via saga
 
         if (result.IsFailure)
             return result.Error;

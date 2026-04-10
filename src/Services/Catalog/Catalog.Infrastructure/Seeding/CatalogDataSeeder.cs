@@ -37,7 +37,7 @@ internal sealed class CatalogDataSeeder(
         {
             var result = Product.Reconstitute(
                 seed.ProductId, seed.Name, seed.Price, seed.Currency,
-                seed.Category, seed.Stock, seed.Description, seed.ImageUrl,
+                seed.Category, seed.Description, seed.ImageUrl,
                 now, updatedAt: null, isDeleted: false, deletedAt: null);
 
             if (result.IsFailure)
@@ -55,7 +55,6 @@ internal sealed class CatalogDataSeeder(
                 Price = product.Price.Amount,
                 Currency = product.Price.Currency,
                 Category = product.Category.Name,
-                Stock = product.Stock.Value,
                 Description = product.Description,
                 ImageUrl = product.ImageUrl,
                 CreatedAt = product.CreatedAt,
@@ -71,7 +70,6 @@ internal sealed class CatalogDataSeeder(
                 Category = product.Category.Name,
                 Price = product.Price.Amount,
                 Currency = product.Price.Currency,
-                Stock = product.Stock.Value,
                 Description = product.Description,
                 ImageUrl = product.ImageUrl,
                 CreatedAt = product.CreatedAt,

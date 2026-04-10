@@ -1,5 +1,4 @@
 using Catalog.Application.Abstractions;
-using Catalog.Infrastructure.Consumers;
 using Catalog.Infrastructure.HealthChecks;
 using Catalog.Infrastructure.Persistence;
 using Catalog.Infrastructure.Persistence.Elasticsearch;
@@ -12,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
+using ServiceDefaults.CorrelationId;
 
 namespace Catalog.Infrastructure;
 
@@ -49,13 +49,20 @@ public static class DependencyInjection
             .AddCheck<MongoDbHealthCheck>("mongodb", tags: ["ready"])
             .AddCheck<ElasticsearchHealthCheck>("elasticsearch", tags: ["ready"]);
 
+        // Outbox Strategy: Catalog uses MongoDB which does not support multi-document transactions
+        // without a replica set. Therefore, we accept eventual consistency for published events.
+        // All downstream consumers (Stock.ProductCreatedConsumer, Basket snapshot consumers) are
+        // idempotent to handle duplicate or replayed messages safely.
+        // Upgrade path: deploy MongoDB as a replica set to enable transactions, then add a
+        // custom MongoDB-based outbox or use MassTransit's MongoDB outbox transport.
         builder.Services.AddMassTransit(x =>
         {
-            x.AddConsumer<StockUpdatedConsumer>();
-
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 cfg.Host(configuration.GetConnectionString("rabbitmq"));
+                cfg.UseMessageRetry(r => r.Intervals(500, 1000, 2000, 5000));
+                cfg.UsePublishFilter(typeof(CorrelationIdPublishFilter<>), ctx);
+                cfg.UseConsumeFilter(typeof(CorrelationIdConsumeFilter<>), ctx);
                 cfg.ConfigureEndpoints(ctx);
             });
         });

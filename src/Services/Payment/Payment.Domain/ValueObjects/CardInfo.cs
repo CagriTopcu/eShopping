@@ -19,6 +19,9 @@ public sealed class CardInfo : ValueObject
     public string ExpiryYear { get; private set; } = string.Empty;
     public string CardHolderName { get; private set; } = string.Empty;
 
+    public static CardInfo CreateAnonymous() =>
+        new("****0000", "00", "00", "SAGA");
+
     public static CardInfo Create(string? cardNumber, string? expiryMonth, string? expiryYear, string? cardHolderName)
     {
         var masked = string.IsNullOrWhiteSpace(cardNumber) || cardNumber.Length < 4

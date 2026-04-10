@@ -56,19 +56,3 @@ export function useDeleteProduct() {
   });
 }
 
-export function useAdjustStock(id: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (delta: number) =>
-      api.patch<void>(`/api/v1/catalog/products/${id}/stock`, { delta }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: catalogKeys.lists() });
-      toast("Stok başarıyla güncellendi", "success");
-    },
-    onError: () => {
-      toast("Stok güncellenirken bir hata oluştu", "error");
-    },
-  });
-}

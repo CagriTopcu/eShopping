@@ -18,8 +18,8 @@ internal sealed class GetCatalogStatsQueryHandler(
         var stats = await readRepository.GetStatsAsync(cancellationToken);
 
         logger.LogDebug(
-            "CatalogStats: {TotalProducts} total products, {LowStockCount} low-stock, {CategoryCount} categories",
-            stats.TotalProducts, stats.LowStockCount, stats.Categories.Count);
+            "CatalogStats: {TotalProducts} total products, {CategoryCount} categories",
+            stats.TotalProducts, stats.Categories.Count);
 
         return stats;
     }

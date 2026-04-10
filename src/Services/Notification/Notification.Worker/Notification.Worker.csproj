@@ -8,11 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Notification.Grpc\Notification.Grpc.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Shared.BuildingBlocks\Shared.BuildingBlocks.csproj" />
     <ProjectReference Include="..\..\..\Shared\Shared.Contracts\Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>

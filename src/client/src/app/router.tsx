@@ -113,6 +113,30 @@ const adminOrderDetailRoute = createRoute({
   ),
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile",
+  component: lazyRouteComponent(
+    () => import("@/features/profile/pages/ProfilePage.tsx"),
+  ),
+});
+
+const adminStockRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/stock",
+  component: lazyRouteComponent(
+    () => import("@/features/admin/pages/AdminStockPage.tsx"),
+  ),
+});
+
+const adminShippingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/shipping",
+  component: lazyRouteComponent(
+    () => import("@/features/admin/pages/AdminShippingPage.tsx"),
+  ),
+});
+
 const authCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/auth/callback",
@@ -136,6 +160,9 @@ const routeTree = rootRoute.addChildren([
   adminProductEditRoute,
   adminOrdersRoute,
   adminOrderDetailRoute,
+  adminStockRoute,
+  adminShippingRoute,
+  profileRoute,
   authCallbackRoute,
 ]);
 

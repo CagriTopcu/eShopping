@@ -99,9 +99,7 @@ internal sealed class ProductElasticsearchReadRepository(
              .Size(0)
              .Query(q => q.Term(t => t.Field(p => p.IsDeleted).Value(false)))
              .Aggregations(agg => agg
-                 .Add("categories", a => a.Terms(t => t.Field(p => p.Category).Size(500)))
-                 .Add("low_stock", a => a.Filter(f => f.Range(r => r.NumberRange(
-                     nr => nr.Field(p => p.Stock).Lt(10))))));
+                 .Add("categories", a => a.Terms(t => t.Field(p => p.Category).Size(500))));
         }, ct);
 
         if (!response.IsValidResponse)
@@ -109,13 +107,10 @@ internal sealed class ProductElasticsearchReadRepository(
             logger.LogWarning(
                 "Elasticsearch stats aggregation failed. DebugInformation: {DebugInfo}",
                 response.DebugInformation);
-            return new CatalogStatsResponse(0, 0, []);
+            return new CatalogStatsResponse(0, []);
         }
 
         var totalProducts = (int)response.Total;
-
-        var lowStockAgg = response.Aggregations?.GetFilter("low_stock");
-        var lowStockCount = (int)(lowStockAgg?.DocCount ?? 0);
 
         var categoriesAgg = response.Aggregations?.GetStringTerms("categories");
         var categories = categoriesAgg?.Buckets
@@ -124,7 +119,7 @@ internal sealed class ProductElasticsearchReadRepository(
             .OrderBy(c => c)
             .ToList() ?? [];
 
-        return new CatalogStatsResponse(totalProducts, lowStockCount, categories);
+        return new CatalogStatsResponse(totalProducts, categories);
     }
 
     public async Task UpsertAsync(ProductReadModel model, CancellationToken ct = default)

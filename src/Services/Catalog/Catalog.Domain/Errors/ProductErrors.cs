@@ -25,12 +25,6 @@ public static class ProductErrors
     public static readonly Error CategoryTooLong =
         Error.Validation("Product.CategoryTooLong", "Category must not exceed 100 characters.");
 
-    public static readonly Error NegativeStock =
-        Error.Validation("Product.NegativeStock", "Stock quantity cannot be negative.");
-
-    public static readonly Error InsufficientStock =
-        Error.Conflict("Product.InsufficientStock", "Insufficient stock.");
-
     public static readonly Error AlreadyDeleted =
         Error.Conflict("Product.AlreadyDeleted", "Product has already been deleted.");
 }

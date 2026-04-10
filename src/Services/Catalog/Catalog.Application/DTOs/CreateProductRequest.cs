@@ -5,7 +5,7 @@ namespace Catalog.Application.DTOs;
 /// <param name="Category">Product category (e.g., Electronics, Clothing).</param>
 /// <param name="Price">Unit price. Must be greater than zero.</param>
 /// <param name="Currency">ISO 4217 currency code (e.g., USD, EUR, TRY).</param>
-/// <param name="Stock">Initial stock quantity. Must be zero or positive.</param>
+/// <param name="InitialStock">Initial stock quantity forwarded to Stock service. Must be zero or positive.</param>
 /// <param name="Description">Optional detailed product description.</param>
 /// <param name="ImageUrl">Optional URL to the product image.</param>
 public sealed record CreateProductRequest(
@@ -13,6 +13,6 @@ public sealed record CreateProductRequest(
     string Category,
     decimal Price,
     string Currency,
-    int Stock,
+    int InitialStock,
     string? Description,
     string? ImageUrl);

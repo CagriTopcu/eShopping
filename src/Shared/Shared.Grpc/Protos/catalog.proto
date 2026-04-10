@@ -23,7 +23,7 @@ message ProductDto {
   double price = 3;
   string currency = 4;
   string category = 5;
-  int32 stock = 6;
+  reserved 6;
   string description = 7;
   string image_url = 8;
 }
